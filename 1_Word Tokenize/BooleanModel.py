@@ -10,6 +10,7 @@
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.uic import loadUi
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QAction, QMainWindow, QSlider, QPushButton, QToolTip, QApplication, QTableWidgetItem
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 
@@ -17,106 +18,12 @@ import os
 import re
 import pandas as pd
 
+class Ui_MainWindow(QMainWindow):
 
-class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 693)
-        MainWindow.setMinimumSize(QtCore.QSize(800, 600))
-        self.centralwidget = QtWidgets.QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
-        self.verticalLayout.setObjectName("verticalLayout")
-        self.frameJudul = QtWidgets.QFrame(self.centralwidget)
-        self.frameJudul.setMaximumSize(QtCore.QSize(16777215, 150))
-        self.frameJudul.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.frameJudul.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frameJudul.setObjectName("frameJudul")
-        self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.frameJudul)
-        self.verticalLayout_2.setContentsMargins(5, 0, 0, 0)
-        self.verticalLayout_2.setSpacing(0)
-        self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.labelJudul = QtWidgets.QLabel(self.frameJudul)
-        font = QtGui.QFont()
-        font.setFamily("Keep Calm")
-        font.setPointSize(14)
-        font.setBold(True)
-        font.setWeight(75)
-        self.labelJudul.setFont(font)
-        self.labelJudul.setAlignment(QtCore.Qt.AlignCenter)
-        self.labelJudul.setObjectName("labelJudul")
-        self.verticalLayout_2.addWidget(self.labelJudul)
-        self.frameDummy = QtWidgets.QFrame(self.frameJudul)
-        self.frameDummy.setMaximumSize(QtCore.QSize(16777215, 60))
-        self.frameDummy.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.frameDummy.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frameDummy.setObjectName("frameDummy")
-        self.verticalLayout_2.addWidget(self.frameDummy)
-        self.LabelNama1 = QtWidgets.QLabel(self.frameJudul)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.LabelNama1.setFont(font)
-        self.LabelNama1.setObjectName("LabelNama1")
-        self.verticalLayout_2.addWidget(self.LabelNama1)
-        self.LabelNama2 = QtWidgets.QLabel(self.frameJudul)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.LabelNama2.setFont(font)
-        self.LabelNama2.setObjectName("LabelNama2")
-        self.verticalLayout_2.addWidget(self.LabelNama2)
-        self.LabelNama3 = QtWidgets.QLabel(self.frameJudul)
-        font = QtGui.QFont()
-        font.setPointSize(10)
-        self.LabelNama3.setFont(font)
-        self.LabelNama3.setObjectName("LabelNama3")
-        self.verticalLayout_2.addWidget(self.LabelNama3)
-        self.verticalLayout.addWidget(self.frameJudul)
-        self.frameContent = QtWidgets.QFrame(self.centralwidget)
-        self.frameContent.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.frameContent.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frameContent.setObjectName("frameContent")
-        self.horizontalLayout = QtWidgets.QHBoxLayout(self.frameContent)
-        self.horizontalLayout.setObjectName("horizontalLayout")
-        self.frameDokumen = QtWidgets.QFrame(self.frameContent)
-        self.frameDokumen.setMaximumSize(QtCore.QSize(300, 16777215))
-        self.frameDokumen.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.frameDokumen.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frameDokumen.setObjectName("frameDokumen")
-        self.verticalLayout_3 = QtWidgets.QVBoxLayout(self.frameDokumen)
-        self.verticalLayout_3.setObjectName("verticalLayout_3")
-        self.frameBtn = QtWidgets.QFrame(self.frameDokumen)
-        self.frameBtn.setMaximumSize(QtCore.QSize(16777215, 100))
-        self.frameBtn.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.frameBtn.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frameBtn.setObjectName("frameBtn")
-        self.verticalLayout_4 = QtWidgets.QVBoxLayout(self.frameBtn)
-        self.verticalLayout_4.setObjectName("verticalLayout_4")
-        self.btnAdd = QtWidgets.QPushButton(self.frameBtn)
-        self.btnAdd.setObjectName("btnAdd")
-        self.verticalLayout_4.addWidget(self.btnAdd)
-        self.btnDel = QtWidgets.QPushButton(self.frameBtn)
-        self.btnDel.setObjectName("btnDel")
-        self.verticalLayout_4.addWidget(self.btnDel)
-        self.verticalLayout_3.addWidget(self.frameBtn)
-        self.listDokumen = QtWidgets.QListWidget(self.frameDokumen)
-        self.listDokumen.setObjectName("listDokumen")
-        self.verticalLayout_3.addWidget(self.listDokumen)
-        self.horizontalLayout.addWidget(self.frameDokumen)
-        self.frameIndex = QtWidgets.QFrame(self.frameContent)
-        self.frameIndex.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.frameIndex.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frameIndex.setObjectName("frameIndex")
-        self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.frameIndex)
-        self.verticalLayout_5.setObjectName("verticalLayout_5")
-        self.listIndex = QtWidgets.QListWidget(self.frameIndex)
-        self.listIndex.setObjectName("listIndex")
-        self.verticalLayout_5.addWidget(self.listIndex)
-        self.horizontalLayout.addWidget(self.frameIndex)
-        self.verticalLayout.addWidget(self.frameContent)
-        MainWindow.setCentralWidget(self.centralwidget)
+    def __init__(self):
 
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        QMainWindow.__init__(self)
+        loadUi('wt_gui.ui', self)
 
         # Declare Variables
         self.counter = 1
@@ -124,31 +31,36 @@ class Ui_MainWindow(object):
         self.split_words = []
         self.list_stopwords = []
         self.stopped_words = []
-        self.stemmed_words =[]
+        self.stemmed_words = []
+
+        self.file_tampil = []
+        self.split_tampil = []
+        self.stop_tampil = []
+        self.stem_tampil = []
 
         # Declare Function
-        self.btnAdd.clicked.connect(self.openFile)
+        self.btnAdd.clicked.connect(self.doWhat)
         self.btnDel.clicked.connect(self.deleteFile)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Sistem Temu Kembali Informasi"))
         self.labelJudul.setText(_translate("MainWindow", "Boolean Model"))
-        self.LabelNama1.setText(_translate("MainWindow", "I Putu Bayu Adhya Wiratama (1905551059)"))
-        self.LabelNama2.setText(_translate("MainWindow", "Ida Ayu Oka Dewi Cahyani (1905551146)"))
-        self.LabelNama3.setText(_translate("MainWindow", "Dwi Ahmad Dzulhijjah (2105551162)"))
-        self.btnAdd.setText(_translate("MainWindow", "+ Add Document"))
-        self.btnDel.setText(_translate("MainWindow", "- Delete Document"))
 
     def openFile(self):
 
         # Open File
         self.fileName, fileType = QFileDialog.getOpenFileName(self.centralwidget, "Open File", "", "*.txt;;All Files(*)")
-        filename = os.path.basename(self.fileName)
-        self.listDokumen.addItem('{}. {}'.format(self.counter, filename))
-        self.listFile.append(self.fileName)
+        if self.fileName not in self.listFile:
+            self.listFile.append(self.fileName)
 
-        self.counter += 1
+            filename = os.path.basename(self.fileName)
+            self.file_tampil.append(filename)
+            self.listDokumen.addItem('{}. {}'.format(self.counter, filename))
+
+            self.counter += 1
+
+    def tokenize(self):
 
         # Tokenizing words
         with open(self.fileName, 'r') as namaFile:
@@ -159,7 +71,19 @@ class Ui_MainWindow(object):
                 self.split_words.extend(content)
                 self.split_words = list(dict.fromkeys(self.split_words))
 
+                self.split_tampil.extend(content)
+                self.split_tampil = list(dict.fromkeys(self.split_tampil))
+
         self.split_words.sort()
+        self.split_tampil.sort()
+
+    def showOriginal(self):
+        self.listOriginal.addItem(os.path.basename(self.fileName) + ':')
+        with open(self.fileName, 'r') as namaFile:
+            for content in namaFile:
+                self.listOriginal.addItem('   {}'.format(content))
+
+    def removeStopwords(self):
 
         # Stopwords
         stopwords_path = 'stopwords_pilkada.csv'
@@ -169,10 +93,18 @@ class Ui_MainWindow(object):
             self.list_stopwords.append(item)
         
         self.stopped_words = self.split_words
-        for x in self.stopped_words:
-            if x in self.list_stopwords:
+        self.stop_tampil = self.split_tampil
+
+        for x in self.stopped_words[:]:
+            if x in self.list_stopwords[:]:
                 self.stopped_words.remove(x)
+                self.stop_tampil.remove(x)
         
+        self.listStopwords.addItem(os.path.basename(self.fileName) + ':')
+        self.listStopwords.addItem('   {}'.format(str(self.stop_tampil)))
+
+    def stemming(self):
+
         # Stemming
         factory = StemmerFactory()
         stemmer = factory.create_stemmer()
@@ -180,39 +112,90 @@ class Ui_MainWindow(object):
         for item in self.stopped_words:
             stemming = stemmer.stem(item)
             self.stemmed_words.append(stemming)
+        
+        for item in self.stop_tampil:
+            stemming = stemmer.stem(item)
+            self.stem_tampil.append(stemming)
             
         self.stemmed_words = list(dict.fromkeys(self.stemmed_words))
         self.stemmed_words.sort()
 
-        # Printing
-        self.listIndex.clear()
+        self.stem_tampil = list(dict.fromkeys(self.stem_tampil))
 
-        for item in self.stemmed_words:
+        self.listStemming.addItem(os.path.basename(self.fileName) + ':')
+        self.listStemming.addItem('   {}'.format(str(self.stem_tampil)))
+
+        self.split_tampil.clear()
+        self.stop_tampil.clear()
+        self.stem_tampil.clear()
+
+    def printInverted(self):
+
+        # Printing
+        self.listInverted.clear()
+
+        for item in range(len(self.stopped_words)):
             exist_file = list()
             for data in self.listFile:
                 with open(data, 'r') as namaFile:
                     for isi in namaFile:
                         isi = isi.lower()
-                        if item in isi:
+                        if self.stopped_words[item] in isi:
                             exist_file.append(os.path.basename(data))
                             exist_file = list(dict.fromkeys(exist_file))
-            self.listIndex.addItem('{}\t: <{}>'.format(item, exist_file))
+            self.listInverted.addItem('{}\t: <{}>'.format(self.stopped_words[item], exist_file))
+
+    def printIncidence(self):
+
+        self.items_clear()
+
+        panjang_col = len(self.listFile)
+        panjang_row = len(self.split_words)
+
+        self.tableWidget.setColumnCount(panjang_col)
+        self.tableWidget.setRowCount(panjang_row)
+
+        self.tableWidget.setHorizontalHeaderLabels(self.file_tampil)
+        self.tableWidget.setVerticalHeaderLabels(self.split_words)
+
+        for x in range(len(self.split_words)):
+            for y in range(len(self.file_tampil)):
+                with open(self.listFile[y], 'r') as openFile:
+                    for content in openFile:
+                        if self.split_words[x] in content.lower():
+                            self.tableWidget.setItem(x, y, QTableWidgetItem('1'))
+                        else:
+                            self.tableWidget.setItem(x, y, QTableWidgetItem('0'))             
+
+    def items_clear(self):
+        for item in self.tableWidget.selectedItems():
+            newitem = QTableWidgetItem()
+            self.tableWidget.setItem(item.row(), item.column(), newitem)
+
+    def doWhat(self):
+        self.openFile()
+        self.tokenize()
+        self.removeStopwords()
+        self.stemming()
+        self.showOriginal()
+        self.printIncidence()
+        self.printInverted()
 
     def deleteFile(self):
         self.counter = 1
         self.listDokumen.clear()
-        self.listIndex.clear()
+        self.listInverted.clear()
         self.listFile.clear()
         self.split_words.clear()
         self.list_stopwords.clear()
         self.stopped_words.clear()
         self.stemmed_words.clear()
+        self.items_clear()
 
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
-    sys.exit(app.exec_())
+app = QApplication([])
+window = Ui_MainWindow()
+window.show()
+app.exec_()
+
+
+
