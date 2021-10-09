@@ -27,20 +27,21 @@ class Ui_MainWindow(QMainWindow):
 
         # Declare Variables
         self.counter = 1
-        self.listFile = []
-        self.split_words = []
-        self.list_stopwords = []
-        self.stopped_words = []
-        self.stemmed_words = []
+        self.listFile = [] # List file full path
+        self.split_words = [] # Tokenized words
+        self.list_stopwords = [] # kamus stopwords
+        self.stopped_words = [] # stopped words
+        self.stemmed_words = [] # stemmed words
 
-        self.file_tampil = []
-        self.split_tampil = []
-        self.stop_tampil = []
-        self.stem_tampil = []
+        self.file_tampil = [] # for process
+        self.split_tampil = [] # for process
+        self.stop_tampil = [] # for process
+        self.stem_tampil = [] # for process
 
         # Declare Function
         self.btnAdd.clicked.connect(self.doWhat)
         self.btnDel.clicked.connect(self.deleteFile)
+        self.btnSearch.clicked.connect(self.booleanModel)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -73,9 +74,6 @@ class Ui_MainWindow(QMainWindow):
 
                 self.split_tampil.extend(content)
                 self.split_tampil = list(dict.fromkeys(self.split_tampil))
-
-        self.split_words.sort()
-        self.split_tampil.sort()
 
     def showOriginal(self):
         self.listOriginal.addItem(os.path.basename(self.fileName) + ':')
@@ -118,7 +116,6 @@ class Ui_MainWindow(QMainWindow):
             self.stem_tampil.append(stemming)
             
         self.stemmed_words = list(dict.fromkeys(self.stemmed_words))
-        self.stemmed_words.sort()
 
         self.stem_tampil = list(dict.fromkeys(self.stem_tampil))
 
@@ -143,7 +140,7 @@ class Ui_MainWindow(QMainWindow):
                         if self.stopped_words[item] in isi:
                             exist_file.append(os.path.basename(data))
                             exist_file = list(dict.fromkeys(exist_file))
-            self.listInverted.addItem('{}\t: <{}>'.format(self.stopped_words[item], exist_file))
+            self.listInverted.addItem('{}\t: <{}>'.format(self.stemmed_words[item], exist_file))
 
     def printIncidence(self):
 
@@ -191,6 +188,66 @@ class Ui_MainWindow(QMainWindow):
         self.stopped_words.clear()
         self.stemmed_words.clear()
         self.items_clear()
+
+    def booleanModel(self):
+        
+        teksEdit = self.textEdit.toPlainText()
+        teksEdit = re.split(r'\W+', teksEdit)
+
+        connecting_words = []
+        different_words = []
+        for word in teksEdit:
+            if word.lower() != 'and' and word.lower() != 'or' and word.lower() != 'not':
+                different_words.append(word.lower())
+            else:
+                connecting_words.append(word.lower())
+        
+        total_files = len(self.listFile)
+
+        zeroes_and_ones = []
+        zeroes_and_ones_of_all_words = []
+        for word in different_words:
+            if word in self.stemmed_words:
+                zeroes_and_ones = [0] * total_files
+                zeroes_and_ones_of_all_words.append(zeroes_and_ones)
+                
+        print(different_words)
+        print(connecting_words)
+        print(zeroes_and_ones)
+        print(zeroes_and_ones_of_all_words)
+
+        for word in connecting_words:
+            word_list1 = zeroes_and_ones_of_all_words[0]
+            word_list2 = zeroes_and_ones_of_all_words[1]
+            if word == "and":
+                bitwise_op = [w1 & w2 for (w1,w2) in zip(word_list1,word_list2)]
+                zeroes_and_ones_of_all_words.remove(word_list1)
+                zeroes_and_ones_of_all_words.remove(word_list2)
+                zeroes_and_ones_of_all_words.insert(0, bitwise_op);
+            elif word == "or":
+                bitwise_op = [w1 | w2 for (w1,w2) in zip(word_list1,word_list2)]
+                zeroes_and_ones_of_all_words.remove(word_list1)
+                zeroes_and_ones_of_all_words.remove(word_list2)
+                zeroes_and_ones_of_all_words.insert(0, bitwise_op);
+            elif word == "not":
+                bitwise_op = [not w1 for w1 in word_list2]
+                bitwise_op = [int(b == True) for b in bitwise_op]
+                zeroes_and_ones_of_all_words.remove(word_list2)
+                zeroes_and_ones_of_all_words.remove(word_list1)
+                bitwise_op = [w1 & w2 for (w1,w2) in zip(word_list1,bitwise_op)]
+        
+        zeroes_and_ones_of_all_words.insert(0, bitwise_op);
+
+        files = []    
+        print(zeroes_and_ones_of_all_words)
+        lis = zeroes_and_ones_of_all_words[0]
+        cnt = 1
+        for index in lis:
+            if index == 1:
+                files.append(self.file_tampil[cnt])
+            cnt = cnt+1
+        
+        print(files)
 
 app = QApplication([])
 window = Ui_MainWindow()
