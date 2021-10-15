@@ -1,7 +1,7 @@
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt5 import QtCore
+from PyQt5.QtGui import QFont
 from PyQt5.uic import loadUi
-from PyQt5.QtWidgets import QFileDialog, QMessageBox, QAction, QMainWindow, QSlider, QPushButton, QToolTip, QApplication, QTableWidgetItem
+from PyQt5.QtWidgets import QFileDialog, QMainWindow, QApplication, QTableWidgetItem
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 
 import os
@@ -170,74 +170,181 @@ class Ui_MainWindow(QMainWindow):
     def tf_idf(self):
 
         total = []
-        
+        for count in self.listFile:
+            total.append(0)
+
+        font = QFont()
+        font.setBold(True)
+
         userInput = self.editTf.toPlainText()
-        userInput = re.split(r'\W+', userInput) # Untuk perhitungan
+        userInput = re.split(r'\W+', userInput)
+        
+        kolom_tf = ['df', 'D/df', 'IDF', 'IDF+1']
 
-        labelRow = userInput.copy()
-        labelRow.append(' ') # Hanya untuk verticalHeader
-
-        print('userInput :', len(userInput))
-        print('labelRow :', len(labelRow))
-
-        # === Making Tf-Idf Table ===
-        panjang_kolom = 6
-        panjang_baris = len(labelRow)
-
-        headerTabel = ['tf', 'df', 'D/df', 'IDF', 'IDF+1', 'W']
+        jarak_W = len(self.listFile) + len(kolom_tf)
+        panjang_kolom = len(self.listFile)*2 + len(kolom_tf) + 1
 
         self.tableTf.setColumnCount(panjang_kolom)
-        self.tableTf.setRowCount(panjang_baris)
-
-        self.tableTf.setHorizontalHeaderLabels(headerTabel)
-        self.tableTf.setVerticalHeaderLabels(labelRow)
-
-        for x in range((len(userInput)+1)):
-            exist_in = []
-            for y in range(len(self.listFile)):
-                with open(self.listFile[y], 'r') as openFile:
-                    for content in openFile:
-                        if labelRow[x] in content.lower():
-                            exist_in.append(1)
-                        else:
-                            exist_in.append(0)
-
-            # === df ===
-            df = 0
-            for count in exist_in:
-                if count > 0:
-                    df = df + 1
-
-            # === D ===
-
-            if df != 0:
-                D = round(len(self.listFile) / df, 2)
-            else:
-                D = 1
-
-            # === idf ===
-            idf = round(math.log(D), 2)
-
-            # === W ===
-            W = []
-            for freq in range(len(exist_in)):
-                W.append(round(exist_in[freq]*(idf+1), 2))
-
-            if x < len(userInput):
-                self.tableTf.setItem(x, 0, QTableWidgetItem(str(exist_in)))
-                self.tableTf.setItem(x, 1, QTableWidgetItem(str(df)))
-                self.tableTf.setItem(x, 2, QTableWidgetItem(str(D)))
-                self.tableTf.setItem(x, 3, QTableWidgetItem(str(idf)))
-                self.tableTf.setItem(x, 4, QTableWidgetItem(str(idf+1)))
-                self.tableTf.setItem(x, 5, QTableWidgetItem(str(W)))
-            else:
-                self.tableTf.setItem(x, 0, QTableWidgetItem(''))
-                self.tableTf.setItem(x, 1, QTableWidgetItem(''))
-                self.tableTf.setItem(x, 2, QTableWidgetItem(''))
-                self.tableTf.setItem(x, 3, QTableWidgetItem(''))
-                self.tableTf.setItem(x, 4, QTableWidgetItem('Sum :'))
-                self.tableTf.setItem(x, 5, QTableWidgetItem(str(total)))
+        self.tableTf.setRowCount(len(userInput)+3)
         
+        self.tableTf.horizontalHeader().setVisible(False)
+        self.tableTf.verticalHeader().setVisible(False)
+
+        # ========== Span Tf ==========
+
+        ''' Format bikin span : tableTf.setSpan(row, column, rowSpan, columnSpan) '''
+
+        self.tableTf.setSpan(0, 1, 1, len(self.listFile))
+        newItem = QTableWidgetItem("tf")
+        newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableTf.setItem(0, 1, newItem)
+        self.tableTf.item(0, 1).setFont(font)
+
+        # ========== Span df ==========
+
+        self.tableTf.setSpan(0, len(self.listFile)+1, 2, 1)
+        newItem = QTableWidgetItem("df")
+        newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableTf.setItem(0, len(self.listFile)+1, newItem)
+        self.tableTf.item(0, len(self.listFile)+1).setFont(font)
+
+        # ========== Span D/df ==========
+
+        self.tableTf.setSpan(0, len(self.listFile)+2, 2, 1)
+        newItem = QTableWidgetItem("D / df")
+        newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableTf.setItem(0, len(self.listFile)+2, newItem)
+        self.tableTf.item(0, len(self.listFile)+2).setFont(font)
+
+        # ========== Span IDF ==========
+
+        self.tableTf.setSpan(0, len(self.listFile)+3, 2, 1)
+        newItem = QTableWidgetItem("IDF")
+        newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableTf.setItem(0, len(self.listFile)+3, newItem)
+        self.tableTf.item(0, len(self.listFile)+3).setFont(font)
+
+        # ========== Span IDF+1 ==========
+
+        self.tableTf.setSpan(0, len(self.listFile)+4, 2, 1)
+        newItem = QTableWidgetItem("IDF")
+        newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableTf.setItem(0, len(self.listFile)+4, newItem)
+        self.tableTf.item(0, len(self.listFile)+4).setFont(font)
+
+        # ========== Span W ==========
+
+        self.tableTf.setSpan(0, len(self.listFile)+5, 1, len(self.listFile))
+        newItem = QTableWidgetItem("W = tf*(IDF+1)")
+        newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableTf.setItem(0, len(self.listFile)+5, newItem)
+        self.tableTf.item(0, len(self.listFile)+5).setFont(font)
+
+        # ========== MAKE TABLE ==========
+
+        # __Print Document di kolom tf (kiri)__ 
+        for y in range(len(self.listFile)):
+            cell_item = QTableWidgetItem(str(self.file_tampil[y]))
+            cell_item.setTextAlignment(QtCore.Qt.AlignCenter)
+            self.tableTf.setItem(1, y+1, cell_item)
+            self.tableTf.item(1, y+1).setFont(font)
+            
+        # __Print Document di kolom tf (kanan)__
+        for y in range(len(self.listFile)):
+            cell_item = QTableWidgetItem(str(self.file_tampil[y]))
+            cell_item.setTextAlignment(QtCore.Qt.AlignCenter)
+            self.tableTf.setItem(1, y+1+jarak_W, cell_item)
+            self.tableTf.item(1, y+1+jarak_W).setFont(font)
+        
+        # # __Isi Tf-Idf__
+        for x in range(len(userInput)):
+
+            exist_in = []
+
+            for y in range((panjang_kolom)):
+
+                # __Print userInput di row__
+                self.tableTf.setItem(x+2, 0, QTableWidgetItem(str(userInput[x])))
+                
+                # __Print nilai tf per document__
+                if y < len(self.listFile):
+                    with open(self.listFile[y], 'r') as openFile:
+                        for content in openFile:
+                            if userInput[x] in content.lower():
+                                exist_in.append(1)
+                            else:
+                                exist_in.append(0)
+
+                    self.tableTf.setItem(x+2, y+1, QTableWidgetItem(str(exist_in[y])))
+
+                # __df__
+                df = 0
+                for count in exist_in:
+                    if count > 0:
+                        df = df + 1
+
+                # __D/df__
+                if df != 0:
+                    D = round(len(self.listFile) / df, 2)
+                else:
+                    D = 1
+
+                # __idf__
+                idf = round(math.log(D), 2)
+
+                # __idf+1__
+                idf_1 = round(idf+1,2)
+
+                # __W__
+                W = []
+                for freq in range(len(exist_in)):
+                    W.append(round(exist_in[freq]*(idf+1), 2))
+
+                if len(W) == len(self.listFile) and y == len(self.listFile):
+                    # __SUM__
+                    zipped_list = zip(total, W)
+                    total = [x+y for (x, y) in zipped_list]
+                                    
+                # __Print nilai setelah tf dan sebelum W__
+                if y == (len(self.listFile)+1) and y <= jarak_W:
+                    self.tableTf.setItem(x+2, y, QTableWidgetItem(str(df)))
+                    self.tableTf.setItem(x+2, y+1, QTableWidgetItem(str(D)))
+                    self.tableTf.setItem(x+2, y+2, QTableWidgetItem(str(idf)))
+                    self.tableTf.setItem(x+2, y+3, QTableWidgetItem(str(idf_1)))
+                
+                # __Print nilai W per dokumen__
+                if y > jarak_W:
+                    self.tableTf.setItem(x+2, y, QTableWidgetItem(str(W[y-(jarak_W+1)])))
+                
+                if x == len(userInput)-1:
+
+                    if y == jarak_W:
+                        item_sum = QTableWidgetItem('Sum :')
+                        self.tableTf.setItem(x+3, y, item_sum)
+                        self.tableTf.item(x+3, y).setFont(font)
+                    elif y > jarak_W:
+                        total_sum = QTableWidgetItem(str(total[y-(jarak_W+1)]))
+                        self.tableTf.setItem(x+3, y, total_sum)
+                        self.tableTf.item(x+3, y).setFont(font)
+
+        file_rank = self.file_tampil.copy()
+
+        for i in range(len(self.listFile)-1):
+            for j in range(len(self.listFile)-i-1):
+                if total[j] < total[j+1]:
+                    temp_total = total[j]
+                    total[j] = total[j+1]
+                    total[j+1] = temp_total
+
+                    temp = file_rank[j]
+                    file_rank[j] = file_rank[j+1]
+                    file_rank[j+1] = temp
+
+        # print(total)
+        # print(file_rank)
+
+        self.rankingTf.setText('Ranking Tf : {} : {}'.format(file_rank, total))
+
 
     def items_clear(self):
         for item in self.tableWidget.selectedItems():

@@ -230,7 +230,7 @@
             <property name="maximumSize">
              <size>
               <width>16777215</width>
-              <height>300</height>
+              <height>200</height>
              </size>
             </property>
             <property name="frameShape">
@@ -517,7 +517,7 @@
              </font>
             </property>
             <property name="currentIndex">
-             <number>0</number>
+             <number>2</number>
             </property>
             <widget class="QWidget" name="tabIncidence">
              <attribute name="title">
@@ -587,7 +587,7 @@
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="QTextEdit" name="textEdit">
+                  <widget class="QTextEdit" name="editTf">
                    <property name="maximumSize">
                     <size>
                      <width>16777215</width>
@@ -602,7 +602,7 @@
                   </widget>
                  </item>
                  <item>
-                  <widget class="QPushButton" name="pushButton">
+                  <widget class="QPushButton" name="btnTf">
                    <property name="maximumSize">
                     <size>
                      <width>16777215</width>
@@ -619,6 +619,13 @@
               </item>
               <item>
                <widget class="QTableWidget" name="tableTf"/>
+              </item>
+              <item>
+               <widget class="QLabel" name="rankingTf">
+                <property name="text">
+                 <string>Ranking Tf :</string>
+                </property>
+               </widget>
               </item>
              </layout>
             </widget>
