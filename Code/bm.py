@@ -1,3 +1,4 @@
+from math import sqrt
 from typing import List
 from PyQt5 import QtCore
 from PyQt5.QtGui import QFont
@@ -38,6 +39,8 @@ class Ui_MainWindow(QMainWindow):
         self.btnAddFile.clicked.connect(self.doAll)
         self.btnTf.clicked.connect(self.tf_idf)
         self.btnCheck.clicked.connect(self.jaccard)
+        self.btnNGram.clicked.connect(self.makeNGram)
+        self.btnCheckCos.clicked.connect(self.makeCosineSimilarity)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
@@ -137,6 +140,9 @@ class Ui_MainWindow(QMainWindow):
 
         self.items_clear()
 
+        font = QFont()
+        font.setBold(True)
+
         panjang_col = len(self.listFile)
         panjang_row = len(self.split_words)
 
@@ -151,9 +157,14 @@ class Ui_MainWindow(QMainWindow):
                 with open(self.listFile[y], 'r') as openFile:
                     for content in openFile:
                         if self.split_words[x] in content.lower():
-                            self.tableWidget.setItem(x, y, QTableWidgetItem('<<1>>'))
+                            newItem = QTableWidgetItem('1')
+                            newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+                            self.tableWidget.setItem(x, y, newItem)
+                            self.tableWidget.item(x,y).setFont(font)
                         else:
-                            self.tableWidget.setItem(x, y, QTableWidgetItem('0'))
+                            newItem = QTableWidgetItem('0')
+                            newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+                            self.tableWidget.setItem(x, y, newItem)
 
     def printInverted(self):
 
@@ -162,15 +173,25 @@ class Ui_MainWindow(QMainWindow):
 
         for item in range(len(self.stopped_words)):
             exist_file = list()
+            freq = 0
             for data in self.listFile:
+                post = list()
                 with open(data, 'r') as namaFile:
                     for isi in namaFile:
                         isi = isi.lower()
+                        list_isi = re.split(r'\W+', isi)
                         if self.stopped_words[item] in isi:
                             exist_file.append(os.path.basename(data))
                             exist_file = list(dict.fromkeys(exist_file))
-                            
-            self.listInverted.addItem('{}\t: <{}>'.format(self.stemmed_words[item], exist_file))
+                            for x in range(len(list_isi)):
+                                if self.stopped_words[item] == list_isi[x]:
+                                    freq += 1
+                                    post.append(x)
+                inverted_show = list()
+                for x in range(len(exist_file)):
+                    inverted_show.append('<{}, {}, {}>'.format(exist_file[x], freq, post))
+
+            self.listInverted.addItem('{}\t: <{}>'.format(self.stemmed_words[item], inverted_show))
     
     def tf_idf(self):
 
@@ -355,23 +376,13 @@ class Ui_MainWindow(QMainWindow):
         self.listJac.clear()
 
         list_A = self.editA.toPlainText()
-        list_A = list(str(list_A))
-        list_A = [int(a) for a in list_A]
+        list_A = re.split(r'\W+', list_A)
 
         list_B = self.editB.toPlainText()
-        list_B = list(str(list_B))
-        list_B = [int(b) for b in list_B]
+        list_B = re.split(r'\W+', list_B)
 
         list_C = self.editC.toPlainText()
-        list_C = list(str(list_C))
-        list_C = [int(c) for c in list_C]
-
-        # print('A :', list_A)
-        # print('Type A :', type(list_A))
-        # print('B :', list_B)
-        # print('Type B :', type(list_B))
-        # print('C :', list_C)
-        # print('Type C :', type(list_C))
+        list_C = re.split(r'\W+', list_C)
 
         list_jac = self.editJaccard.toPlainText()
         list_jac = re.split(r'\W+', list_jac)
@@ -379,15 +390,10 @@ class Ui_MainWindow(QMainWindow):
         for x in range(len(list_jac)):
             list_jac[x] = list_jac[x].upper()
         
-        # print('list_jac :', list_jac)
-        # print('type list_jac :', type(list_jac))
-        
-        if list_jac[0] == 'A' and list_jac[1] == 'B':
+        if list_jac[0] == 'Q' and list_jac[1] == 'A':
             self.countJaccard(list_A, list_B)
-        elif list_jac[0] == 'A' and list_jac[1] == 'C':
+        elif list_jac[0] == 'Q' and list_jac[1] == 'B':
             self.countJaccard(list_A, list_C)
-        elif list_jac[0] == 'B' and list_jac[1] == 'C':
-            self.countJaccard(list_B, list_C)
         else:
             self.listJac.addItem('Error')
 
@@ -399,13 +405,98 @@ class Ui_MainWindow(QMainWindow):
 
     def countJaccard(self, list1, list2):
         self.inter = [value for value in list1 if value in list2]
-        # if bool(self.inter):
-        #     self.inter.append(0)
         
         self.concat = list1 + list2
         self.concat = list(dict.fromkeys(self.concat))
         self.concat.sort()
 
+    def makeNGram(self):
+        ngram = self.editNGram.toPlainText()
+        ngram = int(ngram)
+        ngrammed = []
+
+        self.listNGram.clear()
+
+        for data in self.listFile:
+            with open(data, 'r') as openFile:
+                for isi_file in openFile:
+                    ngrammed.append(self.generate_N_grams(isi_file, ngram))
+            
+
+        for x in range(len(ngrammed)):
+            self.listNGram.addItem('{}\t: {}'.format(self.file_tampil[x], ngrammed[x]))
+
+        for i in range(1):
+            for j in range(len(ngrammed)-1):
+                self.countJaccard(ngrammed[i], ngrammed[j+1])
+                hasilJaccard = len(self.inter)/len(self.concat)
+                self.listNGram.addItem('J({},{}) = {}/{} = {}'.format(
+                    self.file_tampil[i], self.file_tampil[j], len(self.inter), len(self.concat), hasilJaccard))
+
+    def generate_N_grams(self, text, ngram=1):
+
+        words = [word for word in text.split(" ") if word not in self.list_stopwords]  
+        temp=zip(*[words[i:] for i in range(0,ngram)])
+        ans=[' '.join(ngram) for ngram in temp]
+        return ans
+
+    def makeCosineSimilarity(self):
+
+        # saya makan nasi dan makan telur
+        # saya suka makan. saya juga suka minum. itulah saya
+
+        self.listCos.clear()
+        
+        term1 = self.editTerm1.toPlainText()
+        term1 = re.split(r'\W+', term1)
+
+        term2 = self.editTerm2.toPlainText()
+        term2 = re.split(r'\W+', term2)
+        
+        searchCos = self.editSearchCos.toPlainText()
+        searchCos = re.split(r'\W+', searchCos)
+
+        # print('Term 1 :', term1)
+        # print('Term 2 :', term2)
+        # print('SearchCos :', searchCos)
+
+        dot = [1, 1]
+
+        for x in range(len(searchCos)):
+            print('searchCos[{}] : {}'.format(x, searchCos[x]))
+            list1 = []
+            list2 = []
+            pyth = 0
+            freq1 = 0
+            freq2 = 0
+
+            for y in range(len(term1)):
+                if searchCos[x] == term1[y]:
+                    freq1 += 1
+            list1.append(freq1)
+            
+            for z in range(len(term2)):
+                if searchCos[x] == term2[z]:
+                    freq2 +=1
+            list1.append(freq2)
+
+            print('list1 ke-{} : {}'.format(x, list1))
+
+            # Pytaghoras
+            pyth += sqrt(list1[0]*list1[0]) * sqrt(list1[1]*list1[1])
+            print('pyth ke-{} : {}'.format(x, pyth))
+
+            # __A dot B
+            zipped_list = zip(dot, list1)
+            dot = [x*y for (x, y) in zipped_list]
+
+            self.listCos.addItem('{} : {}'.format(searchCos[x], list1))
+        
+        print(dot)
+        print(pyth)
+        hasil_dot = dot[0] + dot[1]
+        hasil_akhir = round(hasil_dot/pyth, 2)
+        self.listCos.addItem('Cosine Similarity : {}'.format(hasil_akhir))
 
     def items_clear(self):
         for item in self.tableWidget.selectedItems():
