@@ -1,4 +1,4 @@
-from math import sqrt
+from math import cos, sqrt
 from typing import List
 from PyQt5 import QtCore
 from PyQt5.QtGui import QFont
@@ -38,22 +38,22 @@ class Ui_MainWindow(QMainWindow):
         # Link Widgets
         self.btnAddFile.clicked.connect(self.doAll)
         self.btnTf.clicked.connect(self.tf_idf)
-        self.btnCheck.clicked.connect(self.jaccard)
-        self.btnNGram.clicked.connect(self.makeNGram)
-        self.btnCheckCos.clicked.connect(self.makeCosineSimilarity)
+        self.btnJacCheck.clicked.connect(self.jaccard)
+        self.btnNCheck.clicked.connect(self.makeNGram)
+        # self.btnCheckCos.clicked.connect(self.makeCosineSimilarity)
 
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.pushButton.setText(_translate("MainWindow", "PushButton"))
-        self.label.setText(_translate("MainWindow", "Original"))
-        self.label_2.setText(_translate("MainWindow", "Tokenize"))
-        self.label_3.setText(_translate("MainWindow", "Stopwords"))
-        self.label_4.setText(_translate("MainWindow", "Stemming"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Preprocessing"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Incidence Index"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Inverted Index"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Tf-Idf"))
+    # def retranslateUi(self, MainWindow):
+    #     _translate = QtCore.QCoreApplication.translate
+        # MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        # self.pushButton.setText(_translate("MainWindow", "PushButton"))
+        # self.label.setText(_translate("MainWindow", "Original"))
+        # self.label_2.setText(_translate("MainWindow", "Tokenize"))
+        # self.label_3.setText(_translate("MainWindow", "Stopwords"))
+        # self.label_4.setText(_translate("MainWindow", "Stemming"))
+        # self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Preprocessing"))
+        # self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Incidence Index"))
+        # self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Inverted Index"))
+        # self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Tf-Idf"))
 
     def openFile(self):
 
@@ -294,6 +294,7 @@ class Ui_MainWindow(QMainWindow):
                 
                 # __Print nilai tf per document__
                 if y < len(self.listFile):
+                    freq = 0
                     with open(self.listFile[y], 'r') as openFile:
                         for content in openFile:
                             if userInput[x] in content.lower():
@@ -375,33 +376,22 @@ class Ui_MainWindow(QMainWindow):
 
         self.listJac.clear()
 
-        list_A = self.editA.toPlainText()
-        list_A = re.split(r'\W+', list_A)
+        jac_query = self.editJaccard.toPlainText()
+        jac_query = re.split(r'\W+', jac_query)
 
-        list_B = self.editB.toPlainText()
-        list_B = re.split(r'\W+', list_B)
+        for x in range(len(self.listFile)):
+            with open(self.listFile[x], 'r') as namaFile:
+                for isi_file in namaFile:
+                    isi_file = re.split(r'\W+', isi_file)
+                    for item in range(len(isi_file)):
+                        isi_file[item] = isi_file[item].lower()
+                    self.countJaccard(jac_query, isi_file)
+                    hasilJaccard = len(self.inter)/len(self.concat)
 
-        list_C = self.editC.toPlainText()
-        list_C = re.split(r'\W+', list_C)
-
-        list_jac = self.editJaccard.toPlainText()
-        list_jac = re.split(r'\W+', list_jac)
-
-        for x in range(len(list_jac)):
-            list_jac[x] = list_jac[x].upper()
-        
-        if list_jac[0] == 'Q' and list_jac[1] == 'A':
-            self.countJaccard(list_A, list_B)
-        elif list_jac[0] == 'Q' and list_jac[1] == 'B':
-            self.countJaccard(list_A, list_C)
-        else:
-            self.listJac.addItem('Error')
-
-        hasilJaccard = len(self.inter)/len(self.concat)
-
-        self.listJac.addItem('{} ∩ {}\t    : {}'.format(list_jac[0], list_jac[1], self.inter))
-        self.listJac.addItem('{} U {}\t    : {}'.format(list_jac[0], list_jac[1], self.concat))
-        self.listJac.addItem('Jaccard({},{}) : {}'.format(list_jac[0], list_jac[1], round(hasilJaccard,2)))
+                self.listJac.addItem('Q ∩ {}\t    : {}'.format(self.file_tampil[x], self.inter))
+                self.listJac.addItem('Q U {}\t    : {}'.format(self.file_tampil[x], self.concat))
+                self.listJac.addItem('Jaccard(Q , {}) : {}'.format(self.file_tampil[x], round(hasilJaccard,2)))
+                self.listJac.addItem('\n========================\n')
 
     def countJaccard(self, list1, list2):
         self.inter = [value for value in list1 if value in list2]
@@ -442,61 +432,59 @@ class Ui_MainWindow(QMainWindow):
 
     def makeCosineSimilarity(self):
 
-        # saya makan nasi dan makan telur
-        # saya suka makan. saya juga suka minum. itulah saya
-
+        # Make Keyword form text1
+        with open(self.listFile[0], 'r') as namaFile:
+            for isi_file in namaFile:
+                self.keyword = re.split(r'\W+', isi_file.lower())
+                self.keyword = list(dict.fromkeys(self.keyword))
+        
         self.listCos.clear()
+        self.listCos.addItem('\n\t{}'.format(self.keyword))
         
-        term1 = self.editTerm1.toPlainText()
-        term1 = re.split(r'\W+', term1)
+        # Counting frequency of each keyword in each file
+        list_freq1 = []
+        for x in range(len(self.listFile)):
+            list_freq = []
+            dot_product = []
 
-        term2 = self.editTerm2.toPlainText()
-        term2 = re.split(r'\W+', term2)
+            # ----- dot product initialization
+            for item in range(len(self.keyword)):
+                dot_product.append(1)
+            # ----- Cuonting frequency
+            with open(self.listFile[x], 'r') as namaFile:
+                for isi_file in namaFile:
+                    isi_file = re.split(r'\W+', isi_file.lower())
+
+                    # ----- y -> len(self.keyword)
+                    for y in range(len(self.keyword)):
+                        freq = 0
+
+                        # ----- z -> len(isi_file)
+                        for z in range(len(isi_file)):
+                            if self.keyword[y] == isi_file[z]:
+                                freq += 1
+
+                        list_freq.append(freq)
+                        
+                    self.listCos.addItem('{} : {}'.format(self.file_tampil[x], list_freq))
+                
+                if x == 0:
+                    list_freq1 = list_freq.copy()
+
+        dot_product = [a * b for a, b in zip(list_freq1, list_freq)]
+        summed = sum(dot_product)
         
-        searchCos = self.editSearchCos.toPlainText()
-        searchCos = re.split(r'\W+', searchCos)
+        bawah_f = []
+        bawah_f2 = []
+        for i in range(len(list_freq1)):
+            bawah_f.append(list_freq1[i]**2)
+            bawah_f2.append(list_freq[i]**2)
 
-        # print('Term 1 :', term1)
-        # print('Term 2 :', term2)
-        # print('SearchCos :', searchCos)
-
-        dot = [1, 1]
-
-        for x in range(len(searchCos)):
-            print('searchCos[{}] : {}'.format(x, searchCos[x]))
-            list1 = []
-            list2 = []
-            pyth = 0
-            freq1 = 0
-            freq2 = 0
-
-            for y in range(len(term1)):
-                if searchCos[x] == term1[y]:
-                    freq1 += 1
-            list1.append(freq1)
-            
-            for z in range(len(term2)):
-                if searchCos[x] == term2[z]:
-                    freq2 +=1
-            list1.append(freq2)
-
-            print('list1 ke-{} : {}'.format(x, list1))
-
-            # Pytaghoras
-            pyth += sqrt(list1[0]*list1[0]) * sqrt(list1[1]*list1[1])
-            print('pyth ke-{} : {}'.format(x, pyth))
-
-            # __A dot B
-            zipped_list = zip(dot, list1)
-            dot = [x*y for (x, y) in zipped_list]
-
-            self.listCos.addItem('{} : {}'.format(searchCos[x], list1))
-        
-        print(dot)
-        print(pyth)
-        hasil_dot = dot[0] + dot[1]
-        hasil_akhir = round(hasil_dot/pyth, 2)
-        self.listCos.addItem('Cosine Similarity : {}'.format(hasil_akhir))
+        bawah = sqrt(sum(bawah_f)) * sqrt(sum(bawah_f2))
+        self.listCos.addItem('dot_product : {}'.format(dot_product))
+        self.listCos.addItem('atas : {}'.format(summed))
+        self.listCos.addItem('bawah : {}'.format(round(bawah,2)))
+        self.listCos.addItem('hasil : {}'.format(round(summed/bawah,2)))
 
     def items_clear(self):
         for item in self.tableWidget.selectedItems():
@@ -511,6 +499,7 @@ class Ui_MainWindow(QMainWindow):
         self.stemming()
         self.printIncidence()
         self.printInverted()
+        self.makeCosineSimilarity()
 
 app = QApplication([])
 window = Ui_MainWindow()
