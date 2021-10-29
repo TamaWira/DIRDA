@@ -168,30 +168,43 @@ class Ui_MainWindow(QMainWindow):
 
     def printInverted(self):
 
+        # os.system('cls')
         # Printing
         self.listInverted.clear()
 
-        for item in range(len(self.stopped_words)):
+        for x in range(len(self.stopped_words)):
+            # print('==========\nPerulangan ke-{}'.format(x+1))
             exist_file = list()
             freq = 0
+
             for data in self.listFile:
+                # print('data :', os.path.basename(data))
                 post = list()
+
                 with open(data, 'r') as namaFile:
                     for isi in namaFile:
                         isi = isi.lower()
                         list_isi = re.split(r'\W+', isi)
-                        if self.stopped_words[item] in isi:
-                            exist_file.append(os.path.basename(data))
-                            exist_file = list(dict.fromkeys(exist_file))
-                            for x in range(len(list_isi)):
-                                if self.stopped_words[item] == list_isi[x]:
-                                    freq += 1
-                                    post.append(x)
-                inverted_show = list()
-                for x in range(len(exist_file)):
-                    inverted_show.append('<{}, {}, {}>'.format(exist_file[x], freq, post))
 
-            self.listInverted.addItem('{}\t: <{}>'.format(self.stemmed_words[item], inverted_show))
+                        for y in range(len(list_isi)):
+                            if self.stopped_words[x] == list_isi[y]:
+
+                                exist_file.append(os.path.basename(data))
+                                exist_file = list(dict.fromkeys(exist_file))
+
+                                freq += 1
+
+                                post.append(y)
+                        # print('post :', post)
+
+                inverted_show = list()
+                for z in range(len(exist_file)):
+                    # inverted_show.append('<{}, {}, {}>'.format(exist_file[z], freq, post))
+                    inverted_show.append('<{}>'.format(exist_file[z]))
+                
+                # print('inverted_show :', inverted_show)
+
+            self.listInverted.addItem('{}\t: <{}>'.format(self.stemmed_words[x], inverted_show))
     
     def tf_idf(self):
 
@@ -203,7 +216,7 @@ class Ui_MainWindow(QMainWindow):
         font.setBold(True)
 
         userInput = self.editTf.toPlainText()
-        userInput = re.split(r'\W+', userInput)
+        userInput = re.split(r'\W+', userInput.lower())
         
         kolom_tf = ['df', 'D/df', 'IDF', 'IDF+1']
 
@@ -253,7 +266,7 @@ class Ui_MainWindow(QMainWindow):
         # ========== Span IDF+1 ==========
 
         self.tableTf.setSpan(0, len(self.listFile)+4, 2, 1)
-        newItem = QTableWidgetItem("IDF")
+        newItem = QTableWidgetItem("IDF+1")
         newItem.setTextAlignment(QtCore.Qt.AlignCenter)
         self.tableTf.setItem(0, len(self.listFile)+4, newItem)
         self.tableTf.item(0, len(self.listFile)+4).setFont(font)
@@ -297,10 +310,11 @@ class Ui_MainWindow(QMainWindow):
                     freq = 0
                     with open(self.listFile[y], 'r') as openFile:
                         for content in openFile:
-                            if userInput[x] in content.lower():
-                                exist_in.append(1)
-                            else:
-                                exist_in.append(0)
+                            content = re.split(r'\W+', content.lower())
+                            for z in range(len(content)):
+                                if userInput[x] == content[z]:
+                                    freq += 1
+                            exist_in.append(freq)
 
                     self.tableTf.setItem(x+2, y+1, QTableWidgetItem(str(exist_in[y])))
 
@@ -439,7 +453,7 @@ class Ui_MainWindow(QMainWindow):
                 self.keyword = list(dict.fromkeys(self.keyword))
         
         self.listCos.clear()
-        self.listCos.addItem('\n\t{}'.format(self.keyword))
+        self.listCos.addItem('kayword : {}'.format(self.keyword))
         
         # Counting frequency of each keyword in each file
         list_freq1 = []
@@ -470,21 +484,22 @@ class Ui_MainWindow(QMainWindow):
                 
                 if x == 0:
                     list_freq1 = list_freq.copy()
+                elif x > 0:
+                    dot_product = [a * b for a, b in zip(list_freq1, list_freq)]
+                    summed = sum(dot_product)
+                    
+                    bawah_f = []
+                    bawah_f2 = []
+                    for i in range(len(list_freq1)):
+                        bawah_f.append(list_freq1[i]**2)
+                        bawah_f2.append(list_freq[i]**2)
 
-        dot_product = [a * b for a, b in zip(list_freq1, list_freq)]
-        summed = sum(dot_product)
-        
-        bawah_f = []
-        bawah_f2 = []
-        for i in range(len(list_freq1)):
-            bawah_f.append(list_freq1[i]**2)
-            bawah_f2.append(list_freq[i]**2)
-
-        bawah = sqrt(sum(bawah_f)) * sqrt(sum(bawah_f2))
-        self.listCos.addItem('dot_product : {}'.format(dot_product))
-        self.listCos.addItem('atas : {}'.format(summed))
-        self.listCos.addItem('bawah : {}'.format(round(bawah,2)))
-        self.listCos.addItem('hasil : {}'.format(round(summed/bawah,2)))
+                    bawah = sqrt(sum(bawah_f)) * sqrt(sum(bawah_f2))
+                    # self.listCos.addItem('dot_product : {}'.format(dot_product))
+                    # self.listCos.addItem('atas : {}'.format(summed))
+                    # self.listCos.addItem('bawah : {}'.format(round(bawah,2)))
+                    self.listCos.addItem('hasil : {}'.format(round(summed/bawah,2)))
+                self.listCos.addItem('\n')
 
     def items_clear(self):
         for item in self.tableWidget.selectedItems():
