@@ -11,6 +11,16 @@ import re
 import math
 import pandas as pd
 
+class Node:
+    def __init__(self ,docId, freq = None):
+        self.freq = freq
+        self.doc = docId
+        self.nextval = None
+    
+class SlinkedList:
+    def __init__(self ,head = None):
+        self.head = head
+
 class Ui_MainWindow(QMainWindow):
     
     def __init__(self):
@@ -37,23 +47,10 @@ class Ui_MainWindow(QMainWindow):
 
         # Link Widgets
         self.btnAddFile.clicked.connect(self.doAll)
+        self.btnBool.clicked.connect(self.makeBoolean2)
         self.btnTf.clicked.connect(self.tf_idf)
         self.btnJacCheck.clicked.connect(self.jaccard)
         self.btnNCheck.clicked.connect(self.makeNGram)
-        # self.btnCheckCos.clicked.connect(self.makeCosineSimilarity)
-
-    # def retranslateUi(self, MainWindow):
-    #     _translate = QtCore.QCoreApplication.translate
-        # MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        # self.pushButton.setText(_translate("MainWindow", "PushButton"))
-        # self.label.setText(_translate("MainWindow", "Original"))
-        # self.label_2.setText(_translate("MainWindow", "Tokenize"))
-        # self.label_3.setText(_translate("MainWindow", "Stopwords"))
-        # self.label_4.setText(_translate("MainWindow", "Stemming"))
-        # self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Preprocessing"))
-        # self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Incidence Index"))
-        # self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Inverted Index"))
-        # self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("MainWindow", "Tf-Idf"))
 
     def openFile(self):
 
@@ -68,12 +65,12 @@ class Ui_MainWindow(QMainWindow):
 
             self.counter += 1
 
+# Preprocessing -start-
     def showOriginal(self):
         self.listDocOri.addItem('>>> {} :'.format(os.path.basename(self.fileName)))
         with open(self.fileName, 'r') as namaFile:
             for content in namaFile:
                 self.listDocOri.addItem('{}\n'.format(content))
-
     def tokenize(self):
 
         # Tokenizing words
@@ -90,7 +87,6 @@ class Ui_MainWindow(QMainWindow):
     
         self.listDocToken.addItem('>>> {} :'.format(os.path.basename(self.fileName)))
         self.listDocToken.addItem('{}\n'.format(str(self.split_tampil)))
-
     def removeStopwords(self):
 
         # Stopwords
@@ -110,7 +106,6 @@ class Ui_MainWindow(QMainWindow):
         
         self.listDocStop.addItem('>>> {} :'.format(os.path.basename(self.fileName)))
         self.listDocStop.addItem('{}\n'.format(str(self.stop_tampil)))
-
     def stemming(self):
 
         # Stemming
@@ -135,7 +130,9 @@ class Ui_MainWindow(QMainWindow):
         self.split_tampil.clear()
         self.stop_tampil.clear()
         self.stem_tampil.clear()
+# -end-
 
+# STKI Features -start-
     def printIncidence(self):
 
         self.items_clear()
@@ -165,7 +162,6 @@ class Ui_MainWindow(QMainWindow):
                             newItem = QTableWidgetItem('0')
                             newItem.setTextAlignment(QtCore.Qt.AlignCenter)
                             self.tableWidget.setItem(x, y, newItem)
-
     def printInverted(self):
 
         # os.system('cls')
@@ -206,6 +202,158 @@ class Ui_MainWindow(QMainWindow):
 
             self.listInverted.addItem('{}\t: <{}>'.format(self.stemmed_words[x], inverted_show))
     
+    def makeBoolean2(self):
+        all_words = []
+        dict_global = {}
+        idx = 1
+        files_with_index = {}
+
+        for file in self.listFile:
+            fname = file
+            file = open(file , "r")
+            text = file.read()
+            text = re.sub(re.compile('\d'),'',text)
+            words = re.split(r'\W+', text) # tokenize words
+            words = [word for word in words if len(words)>1] # check if file not empty / only contains 1 word
+            words = [word.lower() for word in words] # lower case
+            words = [word for word in words if word not in self.list_stopwords] #stopwords
+            dict_global.update(self.finding_all_unique_words_and_freq(words))
+            files_with_index[idx] = os.path.basename(fname)
+            idx = idx + 1
+    
+        unique_words_all = set(dict_global.keys())
+
+        linked_list_data = {}
+        for word in unique_words_all:
+            linked_list_data[word] = SlinkedList()
+            linked_list_data[word].head = Node(1,Node)
+            print(linked_list_data)
+
+        word_freq_in_doc = {}
+        idx = 1
+
+        for file in self.listFile:
+            file = open(file, "r")
+            text = file.read()
+            text = re.sub(re.compile('\d'),'',text)
+            words = re.split(r'\W+', text)
+            words = [word for word in words if len(words)>1]
+            words = [word.lower() for word in words]
+            words = [word for word in words if word not in self.list_stopwords]
+            word_freq_in_doc = self.finding_all_unique_words_and_freq(words)
+            print(word_freq_in_doc)
+            for word in word_freq_in_doc.keys():
+                linked_list = linked_list_data[word].head
+                while linked_list.nextval is not None:
+                    linked_list = linked_list.nextval
+                linked_list.nextval = Node(idx ,word_freq_in_doc[word])
+            idx = idx + 1
+
+        query = self.editBool.toPlainText()
+        query = re.split(r'\W+', query)
+        connecting_words = []
+        cnt = 1
+        different_words = []
+        for word in query:
+            if word.lower() != "and" and word.lower() != "or" and word.lower() != "not":
+                different_words.append(word.lower())
+            else:
+                connecting_words.append(word.lower())
+        print(connecting_words)
+        total_files = len(files_with_index)
+        zeroes_and_ones = []
+        zeroes_and_ones_of_all_words = []
+        for word in (different_words):
+            if word.lower() in unique_words_all:
+                zeroes_and_ones = [0] * total_files
+                linkedlist = linked_list_data[word].head
+                print(word)
+                while linkedlist.nextval is not None:
+                    zeroes_and_ones[linkedlist.nextval.doc - 1] = 1
+                    linkedlist = linkedlist.nextval
+                zeroes_and_ones_of_all_words.append(zeroes_and_ones)
+            else:
+                print(word," not found")
+        print(zeroes_and_ones_of_all_words)
+        for word in connecting_words:
+            word_list1 = zeroes_and_ones_of_all_words[0]
+            word_list2 = zeroes_and_ones_of_all_words[1]
+            if word == "and":
+                bitwise_op = [w1 & w2 for (w1,w2) in zip(word_list1,word_list2)]
+                zeroes_and_ones_of_all_words.remove(word_list1)
+                zeroes_and_ones_of_all_words.remove(word_list2)
+                zeroes_and_ones_of_all_words.insert(0, bitwise_op);
+            elif word == "or":
+                bitwise_op = [w1 | w2 for (w1,w2) in zip(word_list1,word_list2)]
+                zeroes_and_ones_of_all_words.remove(word_list1)
+                zeroes_and_ones_of_all_words.remove(word_list2)
+                zeroes_and_ones_of_all_words.insert(0, bitwise_op);
+            elif word == "not":
+                bitwise_op = [not w1 for w1 in word_list2]
+                bitwise_op = [int(b == True) for b in bitwise_op]
+                zeroes_and_ones_of_all_words.remove(word_list2)
+                zeroes_and_ones_of_all_words.remove(word_list1)
+                bitwise_op = [w1 & w2 for (w1,w2) in zip(word_list1,bitwise_op)]
+        zeroes_and_ones_of_all_words.insert(0, bitwise_op);
+                
+        files = []    
+        print(zeroes_and_ones_of_all_words)
+        lis = zeroes_and_ones_of_all_words[0]
+        cnt = 1
+        for index in lis:
+            if index == 1:
+                files.append(files_with_index[cnt])
+            cnt = cnt+1
+            
+        self.boolIncidence.setText(str(files))
+        self.boolInverted.setText(str(files))
+
+    def makeBoolean(self):
+
+        _translate = QtCore.QCoreApplication.translate
+        queryBoolean = self.editBool.toPlainText()
+        queryBoolean = re.split(r'\W+', queryBoolean)
+
+        word_query = []
+        bitwise_opt = []
+        for x in range(len(queryBoolean)):
+            if queryBoolean[x] == 'AND' or queryBoolean[x] == 'OR' or queryBoolean[x] == 'NOT':
+                bitwise_opt.append(queryBoolean[x])
+            else:
+                word_query.append(queryBoolean[x].lower())
+
+        # --- Incidence Matrix
+        list_bit = []
+        hasil_incidence = []
+        for x in range(len(word_query)):
+            exist_in = []
+            for y in range(len(self.listFile)):
+                with open(self.listFile[y], 'r') as namaFile:
+                    for isi_file in namaFile:
+                        if word_query[x] in isi_file.lower():
+                            exist_in.append(1)
+                        else:
+                            exist_in.append(0)
+        
+            exist_in = [str(integer) for integer in exist_in]
+            exist_in = "".join(exist_in)
+            exist_in = int(exist_in)
+            # exist_in = bin(int(exist_in))
+            print('exist_in ke-{} : {}'.format(x, exist_in))
+
+            list_bit.append(exist_in)
+        
+        hasil_bool = list_bit[0] & list_bit[1] | list_bit[2]
+        print('hasil_bool :', hasil_bool)
+
+        digit_string = str(hasil_bool)
+        digit_map = map(int, digit_string)
+        hasil_list = list(digit_map)
+        for x in range(len(hasil_list)):
+            if hasil_list[x] == 1:
+                hasil_incidence.append(self.file_tampil[x])
+        
+        self.boolIncidence.setText(str(hasil_incidence))
     def tf_idf(self):
 
         total = []
@@ -385,7 +533,6 @@ class Ui_MainWindow(QMainWindow):
         # print(file_rank)
 
         self.rankingTf.setText('Ranking Tf : {} : {}'.format(file_rank, total))
-
     def jaccard(self):
 
         self.listJac.clear()
@@ -406,14 +553,12 @@ class Ui_MainWindow(QMainWindow):
                 self.listJac.addItem('Q U {}\t    : {}'.format(self.file_tampil[x], self.concat))
                 self.listJac.addItem('Jaccard(Q , {}) : {}'.format(self.file_tampil[x], round(hasilJaccard,2)))
                 self.listJac.addItem('\n========================\n')
-
     def countJaccard(self, list1, list2):
         self.inter = [value for value in list1 if value in list2]
         
         self.concat = list1 + list2
         self.concat = list(dict.fromkeys(self.concat))
         self.concat.sort()
-
     def makeNGram(self):
         ngram = self.editNGram.toPlainText()
         ngram = int(ngram)
@@ -433,17 +578,15 @@ class Ui_MainWindow(QMainWindow):
         for i in range(1):
             for j in range(len(ngrammed)-1):
                 self.countJaccard(ngrammed[i], ngrammed[j+1])
-                hasilJaccard = len(self.inter)/len(self.concat)
+                hasilJaccard = round(len(self.inter)/len(self.concat),2)
                 self.listNGram.addItem('J({},{}) = {}/{} = {}'.format(
                     self.file_tampil[i], self.file_tampil[j], len(self.inter), len(self.concat), hasilJaccard))
-
     def generate_N_grams(self, text, ngram=1):
 
         words = [word for word in text.split(" ") if word not in self.list_stopwords]  
         temp=zip(*[words[i:] for i in range(0,ngram)])
         ans=[' '.join(ngram) for ngram in temp]
         return ans
-
     def makeCosineSimilarity(self):
 
         # Make Keyword form text1
@@ -453,7 +596,7 @@ class Ui_MainWindow(QMainWindow):
                 self.keyword = list(dict.fromkeys(self.keyword))
         
         self.listCos.clear()
-        self.listCos.addItem('kayword : {}'.format(self.keyword))
+        self.listCos.addItem('keyword : {}'.format(self.keyword))
         
         # Counting frequency of each keyword in each file
         list_freq1 = []
@@ -495,17 +638,30 @@ class Ui_MainWindow(QMainWindow):
                         bawah_f2.append(list_freq[i]**2)
 
                     bawah = sqrt(sum(bawah_f)) * sqrt(sum(bawah_f2))
+                    if bawah == 0:
+                        bawah = 1
                     # self.listCos.addItem('dot_product : {}'.format(dot_product))
                     # self.listCos.addItem('atas : {}'.format(summed))
                     # self.listCos.addItem('bawah : {}'.format(round(bawah,2)))
                     self.listCos.addItem('hasil : {}'.format(round(summed/bawah,2)))
                 self.listCos.addItem('\n')
 
+# Helper Function -start-
+    def finding_all_unique_words_and_freq(self, words):
+        words_unique = []
+        word_freq = {}
+        for word in words:
+            if word not in words_unique:
+                words_unique.append(word)
+        for word in words_unique:
+            word_freq[word] = words.count(word)
+        return word_freq      
+    def finding_freq_of_word_in_doc(self, word, words):
+        freq = words.count(word)
     def items_clear(self):
         for item in self.tableWidget.selectedItems():
             newitem = QTableWidgetItem()
             self.tableWidget.setItem(item.row(), item.column(), newitem)
-
     def doAll(self):
         self.openFile()
         self.showOriginal()
@@ -515,6 +671,7 @@ class Ui_MainWindow(QMainWindow):
         self.printIncidence()
         self.printInverted()
         self.makeCosineSimilarity()
+# -end-
 
 app = QApplication([])
 window = Ui_MainWindow()
