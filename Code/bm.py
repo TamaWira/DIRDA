@@ -1,5 +1,5 @@
 from math import cos, sqrt
-from typing import List
+from typing import KeysView, List
 from PyQt5 import QtCore
 from PyQt5.QtGui import QFont
 from PyQt5.uic import loadUi
@@ -47,46 +47,62 @@ class Ui_MainWindow(QMainWindow):
 
         # Link Widgets
         self.btnAddFile.clicked.connect(self.doAll)
-        self.btnBool.clicked.connect(self.makeBoolean2)
+        self.btnBool.clicked.connect(self.makeBoolean)
         self.btnTf.clicked.connect(self.tf_idf)
         self.btnJacCheck.clicked.connect(self.jaccard)
         self.btnNCheck.clicked.connect(self.makeNGram)
+        self.btnCosine.clicked.connect(self.makeCosineSimilarity)
 
     def openFile(self):
 
-        # Open File
-        self.fileName, fileType = QFileDialog.getOpenFileName(self.centralwidget, "Open File", "", "*.txt;;All Files(*)")
-        if self.fileName not in self.listFile:
-            self.listFile.append(self.fileName)
+        counter = 1
+        self.listOpenedDocument.clear()
 
-            filename = os.path.basename(self.fileName)
-            self.file_tampil.append(filename)
-            self.listOpenedDocument.addItem('{}. {}'.format(self.counter, filename))
+        caption = 'Open File'
+        directory = './'
+        filter_mask = 'Text Files (*.txt)'
+        filenames = QFileDialog.getOpenFileNames(None, caption, directory, filter_mask)[0]
 
-            self.counter += 1
+        # keeping opened files
+        for x in range(len(filenames)):
+            if filenames[x] not in self.listFile:
+                self.listFile.append(filenames[x])
+
+                file = os.path.basename(filenames[x])
+                file = os.path.splitext(file)
+                self.file_tampil.append(file[0])
+        
+        # Print Opened Files
+        for y in self.file_tampil:
+            self.listOpenedDocument.addItem('{}. {}'.format(counter, y))
+            counter += 1
 
 # Preprocessing -start-
     def showOriginal(self):
-        self.listDocOri.addItem('>>> {} :'.format(os.path.basename(self.fileName)))
-        with open(self.fileName, 'r') as namaFile:
-            for content in namaFile:
-                self.listDocOri.addItem('{}\n'.format(content))
+
+        for file in self.listFile:
+            self.listDocOri.addItem('>>> {} :'.format(os.path.basename(file)))
+
+            openedFile = open(file, 'r')
+            content = openedFile.read()
+            self.listDocOri.addItem('{}\n'.format(content))
     def tokenize(self):
 
-        # Tokenizing words
-        with open(self.fileName, 'r') as namaFile:
-            for content in namaFile:
-                content = content.lower()
-                content = re.split(r'\W+', content)
-                
-                self.split_words.extend(content)
-                self.split_words = list(dict.fromkeys(self.split_words))
+        for file in self.listFile:
 
-                self.split_tampil.extend(content)
-                self.split_tampil = list(dict.fromkeys(self.split_tampil))
-    
-        self.listDocToken.addItem('>>> {} :'.format(os.path.basename(self.fileName)))
-        self.listDocToken.addItem('{}\n'.format(str(self.split_tampil)))
+            openedFile = open(file, 'r')
+            content = openedFile.read()
+            content = content.lower()
+            content = re.split(r'\W+', content)
+
+            self.split_words.extend(content)
+            self.split_words = list(dict.fromkeys(self.split_words))
+
+            self.split_tampil.extend(content)
+            self.split_tampil = list(dict.fromkeys(self.split_tampil))
+        
+            self.listDocToken.addItem('>>> {} :'.format(os.path.basename(file)))
+            self.listDocToken.addItem('{}\n'.format(str(self.split_tampil)))      
     def removeStopwords(self):
 
         # Stopwords
@@ -104,8 +120,9 @@ class Ui_MainWindow(QMainWindow):
                 self.stopped_words.remove(x)
                 self.stop_tampil.remove(x)
         
-        self.listDocStop.addItem('>>> {} :'.format(os.path.basename(self.fileName)))
-        self.listDocStop.addItem('{}\n'.format(str(self.stop_tampil)))
+        for files in self.listFile:
+            self.listDocStop.addItem('>>> {} :'.format(os.path.basename(files)))
+            self.listDocStop.addItem('{}\n'.format(str(self.stop_tampil)))
     def stemming(self):
 
         # Stemming
@@ -124,8 +141,9 @@ class Ui_MainWindow(QMainWindow):
 
         self.stem_tampil = list(dict.fromkeys(self.stem_tampil))
 
-        self.listDocStem.addItem('>>> {} :'.format(os.path.basename(self.fileName)))
-        self.listDocStem.addItem('{}\n'.format(str(self.stem_tampil)))
+        for files in self.listFile:
+            self.listDocStem.addItem('>>> {} :'.format(os.path.basename(files)))
+            self.listDocStem.addItem('{}\n'.format(str(self.stem_tampil)))
 
         self.split_tampil.clear()
         self.stop_tampil.clear()
@@ -164,17 +182,14 @@ class Ui_MainWindow(QMainWindow):
                             self.tableWidget.setItem(x, y, newItem)
     def printInverted(self):
 
-        # os.system('cls')
         # Printing
         self.listInverted.clear()
 
         for x in range(len(self.stopped_words)):
-            # print('==========\nPerulangan ke-{}'.format(x+1))
             exist_file = list()
             freq = 0
 
             for data in self.listFile:
-                # print('data :', os.path.basename(data))
                 post = list()
 
                 with open(data, 'r') as namaFile:
@@ -184,25 +199,20 @@ class Ui_MainWindow(QMainWindow):
 
                         for y in range(len(list_isi)):
                             if self.stopped_words[x] == list_isi[y]:
-
+                                    
                                 exist_file.append(os.path.basename(data))
                                 exist_file = list(dict.fromkeys(exist_file))
 
                                 freq += 1
 
                                 post.append(y)
-                        # print('post :', post)
 
                 inverted_show = list()
                 for z in range(len(exist_file)):
-                    # inverted_show.append('<{}, {}, {}>'.format(exist_file[z], freq, post))
-                    inverted_show.append('<{}>'.format(exist_file[z]))
-                
-                # print('inverted_show :', inverted_show)
+                    inverted_show.append('{}'.format(exist_file[z]))
 
-            self.listInverted.addItem('{}\t: <{}>'.format(self.stemmed_words[x], inverted_show))
-    
-    def makeBoolean2(self):
+            self.listInverted.addItem('{}\t: {}'.format(self.stemmed_words[x], inverted_show))
+    def makeBoolean(self):
         all_words = []
         dict_global = {}
         idx = 1
@@ -227,7 +237,6 @@ class Ui_MainWindow(QMainWindow):
         for word in unique_words_all:
             linked_list_data[word] = SlinkedList()
             linked_list_data[word].head = Node(1,Node)
-            print(linked_list_data)
 
         word_freq_in_doc = {}
         idx = 1
@@ -241,7 +250,6 @@ class Ui_MainWindow(QMainWindow):
             words = [word.lower() for word in words]
             words = [word for word in words if word not in self.list_stopwords]
             word_freq_in_doc = self.finding_all_unique_words_and_freq(words)
-            print(word_freq_in_doc)
             for word in word_freq_in_doc.keys():
                 linked_list = linked_list_data[word].head
                 while linked_list.nextval is not None:
@@ -259,7 +267,6 @@ class Ui_MainWindow(QMainWindow):
                 different_words.append(word.lower())
             else:
                 connecting_words.append(word.lower())
-        print(connecting_words)
         total_files = len(files_with_index)
         zeroes_and_ones = []
         zeroes_and_ones_of_all_words = []
@@ -267,14 +274,12 @@ class Ui_MainWindow(QMainWindow):
             if word.lower() in unique_words_all:
                 zeroes_and_ones = [0] * total_files
                 linkedlist = linked_list_data[word].head
-                print(word)
                 while linkedlist.nextval is not None:
                     zeroes_and_ones[linkedlist.nextval.doc - 1] = 1
                     linkedlist = linkedlist.nextval
                 zeroes_and_ones_of_all_words.append(zeroes_and_ones)
             else:
                 print(word," not found")
-        print(zeroes_and_ones_of_all_words)
         for word in connecting_words:
             word_list1 = zeroes_and_ones_of_all_words[0]
             word_list2 = zeroes_and_ones_of_all_words[1]
@@ -297,7 +302,6 @@ class Ui_MainWindow(QMainWindow):
         zeroes_and_ones_of_all_words.insert(0, bitwise_op);
                 
         files = []    
-        print(zeroes_and_ones_of_all_words)
         lis = zeroes_and_ones_of_all_words[0]
         cnt = 1
         for index in lis:
@@ -307,53 +311,6 @@ class Ui_MainWindow(QMainWindow):
             
         self.boolIncidence.setText(str(files))
         self.boolInverted.setText(str(files))
-
-    def makeBoolean(self):
-
-        _translate = QtCore.QCoreApplication.translate
-        queryBoolean = self.editBool.toPlainText()
-        queryBoolean = re.split(r'\W+', queryBoolean)
-
-        word_query = []
-        bitwise_opt = []
-        for x in range(len(queryBoolean)):
-            if queryBoolean[x] == 'AND' or queryBoolean[x] == 'OR' or queryBoolean[x] == 'NOT':
-                bitwise_opt.append(queryBoolean[x])
-            else:
-                word_query.append(queryBoolean[x].lower())
-
-        # --- Incidence Matrix
-        list_bit = []
-        hasil_incidence = []
-        for x in range(len(word_query)):
-            exist_in = []
-            for y in range(len(self.listFile)):
-                with open(self.listFile[y], 'r') as namaFile:
-                    for isi_file in namaFile:
-                        if word_query[x] in isi_file.lower():
-                            exist_in.append(1)
-                        else:
-                            exist_in.append(0)
-        
-            exist_in = [str(integer) for integer in exist_in]
-            exist_in = "".join(exist_in)
-            exist_in = int(exist_in)
-            # exist_in = bin(int(exist_in))
-            print('exist_in ke-{} : {}'.format(x, exist_in))
-
-            list_bit.append(exist_in)
-        
-        hasil_bool = list_bit[0] & list_bit[1] | list_bit[2]
-        print('hasil_bool :', hasil_bool)
-
-        digit_string = str(hasil_bool)
-        digit_map = map(int, digit_string)
-        hasil_list = list(digit_map)
-        for x in range(len(hasil_list)):
-            if hasil_list[x] == 1:
-                hasil_incidence.append(self.file_tampil[x])
-        
-        self.boolIncidence.setText(str(hasil_incidence))
     def tf_idf(self):
 
         total = []
@@ -529,12 +486,13 @@ class Ui_MainWindow(QMainWindow):
                     file_rank[j] = file_rank[j+1]
                     file_rank[j+1] = temp
 
-        # print(total)
-        # print(file_rank)
-
-        self.rankingTf.setText('Ranking Tf : {} : {}'.format(file_rank, total))
+        self.rankTf.addItem('-- File Rank --')
+        for k in range(len(file_rank)):
+            self.rankTf.addItem('{} : {}'.format(file_rank[k], total[k]))
     def jaccard(self):
 
+        total = []
+        file_rank = self.file_tampil.copy()
         self.listJac.clear()
 
         jac_query = self.editJaccard.toPlainText()
@@ -548,11 +506,27 @@ class Ui_MainWindow(QMainWindow):
                         isi_file[item] = isi_file[item].lower()
                     self.countJaccard(jac_query, isi_file)
                     hasilJaccard = len(self.inter)/len(self.concat)
+                    total.append(hasilJaccard)
 
                 self.listJac.addItem('Q ∩ {}\t    : {}'.format(self.file_tampil[x], self.inter))
                 self.listJac.addItem('Q U {}\t    : {}'.format(self.file_tampil[x], self.concat))
                 self.listJac.addItem('Jaccard(Q , {}) : {}'.format(self.file_tampil[x], round(hasilJaccard,2)))
                 self.listJac.addItem('\n========================\n')
+        
+        for i in range(len(self.listFile)-1):
+            for j in range(len(self.listFile)-i-1):
+                if total[j] < total[j+1]:
+                    temp_total = total[j]
+                    total[j] = total[j+1]
+                    total[j+1] = temp_total
+
+                    temp = file_rank[j]
+                    file_rank[j] = file_rank[j+1]
+                    file_rank[j+1] = temp
+        
+        self.rankJaccard.addItem('-- File Rank --')
+        for k in range(len(file_rank)):
+            self.rankJaccard.addItem('{} : {}'.format(file_rank[k], round(total[k],2)))
     def countJaccard(self, list1, list2):
         self.inter = [value for value in list1 if value in list2]
         
@@ -560,6 +534,8 @@ class Ui_MainWindow(QMainWindow):
         self.concat = list(dict.fromkeys(self.concat))
         self.concat.sort()
     def makeNGram(self):
+
+        total = []
         ngram = self.editNGram.toPlainText()
         ngram = int(ngram)
         ngrammed = []
@@ -578,9 +554,12 @@ class Ui_MainWindow(QMainWindow):
         for i in range(1):
             for j in range(len(ngrammed)-1):
                 self.countJaccard(ngrammed[i], ngrammed[j+1])
-                hasilJaccard = round(len(self.inter)/len(self.concat),2)
+                hasilNGram = round(len(self.inter)/len(self.concat),2)
+                total.append(hasilNGram)
                 self.listNGram.addItem('J({},{}) = {}/{} = {}'.format(
-                    self.file_tampil[i], self.file_tampil[j], len(self.inter), len(self.concat), hasilJaccard))
+                    self.file_tampil[i], self.file_tampil[j+1], len(self.inter), len(self.concat), round(hasilNGram,2)))
+        
+        print('hasil N-Gram :', total)
     def generate_N_grams(self, text, ngram=1):
 
         words = [word for word in text.split(" ") if word not in self.list_stopwords]  
@@ -589,62 +568,78 @@ class Ui_MainWindow(QMainWindow):
         return ans
     def makeCosineSimilarity(self):
 
-        # Make Keyword form text1
-        with open(self.listFile[0], 'r') as namaFile:
-            for isi_file in namaFile:
-                self.keyword = re.split(r'\W+', isi_file.lower())
-                self.keyword = list(dict.fromkeys(self.keyword))
+        total = []
+        file_rank = self.file_tampil.copy()
+        zeros_keyword = []
+
+        self.keyword = self.editCosine.toPlainText()
+        self.keyword = re.split(r'\W+', self.keyword.lower())
+        zeros_keyword = [1] * len(self.keyword)
+        print(zeros_keyword)
         
         self.listCos.clear()
-        self.listCos.addItem('keyword : {}'.format(self.keyword))
-        
+        self.listCos.addItem('keyword  :{}\n'.format(self.keyword))
+
         # Counting frequency of each keyword in each file
-        list_freq1 = []
+        list_freq = []
         for x in range(len(self.listFile)):
+
+            self.listCos.addItem('keyword : {}'.format(zeros_keyword))
+
             list_freq = []
+            
             dot_product = []
+            dot_product = [1] * len(self.keyword)
 
-            # ----- dot product initialization
-            for item in range(len(self.keyword)):
-                dot_product.append(1)
-            # ----- Cuonting frequency
-            with open(self.listFile[x], 'r') as namaFile:
-                for isi_file in namaFile:
-                    isi_file = re.split(r'\W+', isi_file.lower())
+            file = open(self.listFile[x], 'r')
+            opened_file = file.read()
+            opened_file = re.split(r'\W+', opened_file.lower())
 
-                    # ----- y -> len(self.keyword)
-                    for y in range(len(self.keyword)):
-                        freq = 0
+            for y in range(len(self.keyword)):
+                freq = 0
 
-                        # ----- z -> len(isi_file)
-                        for z in range(len(isi_file)):
-                            if self.keyword[y] == isi_file[z]:
-                                freq += 1
-
-                        list_freq.append(freq)
-                        
-                    self.listCos.addItem('{} : {}'.format(self.file_tampil[x], list_freq))
+                for z in range(len(opened_file)):
+                    if self.keyword[y] == opened_file[z]:
+                        freq += 1
                 
-                if x == 0:
-                    list_freq1 = list_freq.copy()
-                elif x > 0:
-                    dot_product = [a * b for a, b in zip(list_freq1, list_freq)]
-                    summed = sum(dot_product)
-                    
-                    bawah_f = []
-                    bawah_f2 = []
-                    for i in range(len(list_freq1)):
-                        bawah_f.append(list_freq1[i]**2)
-                        bawah_f2.append(list_freq[i]**2)
+                list_freq.append(freq)
 
-                    bawah = sqrt(sum(bawah_f)) * sqrt(sum(bawah_f2))
-                    if bawah == 0:
-                        bawah = 1
-                    # self.listCos.addItem('dot_product : {}'.format(dot_product))
-                    # self.listCos.addItem('atas : {}'.format(summed))
-                    # self.listCos.addItem('bawah : {}'.format(round(bawah,2)))
-                    self.listCos.addItem('hasil : {}'.format(round(summed/bawah,2)))
-                self.listCos.addItem('\n')
+            print(list_freq)
+            self.listCos.addItem('{}\t: {}'.format(self.file_tampil[x], list_freq))
+
+            # --- Perhitungan Cosine Similarity
+            dot_product = [a * b for a, b in zip(zeros_keyword, list_freq)]
+            summed = sum(dot_product)
+            bawah_f = []
+            bawah_f2 = []
+            for i in range(len(zeros_keyword)):
+                bawah_f.append(zeros_keyword[i]**2)
+                bawah_f2.append(list_freq[i]**2)
+                    
+            bawah = sqrt(sum(bawah_f)) * sqrt(sum(bawah_f2))
+            if bawah == 0:
+                bawah = 1
+            hasil = summed/bawah
+
+            total.append(hasil)
+
+            self.listCos.addItem('hasil : {}\n'.format(round(hasil,2)))
+
+        for i in range(len(self.listFile)-1):
+            for j in range(len(self.listFile)-i-1):
+                if total[j] < total[j+1]:
+                    temp_total = total[j]
+                    total[j] = total[j+1]
+                    total[j+1] = temp_total
+
+                    temp = file_rank[j]
+                    file_rank[j] = file_rank[j+1]
+                    file_rank[j+1] = temp
+        
+        self.rankCosine.addItem('-- File Rank --')
+        for k in range(len(file_rank)):
+            self.rankCosine.addItem('{} : {}'.format(file_rank[k], round(total[k],2)))
+# -end-
 
 # Helper Function -start-
     def finding_all_unique_words_and_freq(self, words):
@@ -670,7 +665,7 @@ class Ui_MainWindow(QMainWindow):
         self.stemming()
         self.printIncidence()
         self.printInverted()
-        self.makeCosineSimilarity()
+        # self.makeCosineSimilarity()
 # -end-
 
 app = QApplication([])
