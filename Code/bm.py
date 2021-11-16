@@ -1,5 +1,4 @@
-from math import cos, sqrt
-from typing import KeysView, List
+from math import sqrt
 from PyQt5 import QtCore
 from PyQt5.QtGui import QFont
 from PyQt5.uic import loadUi
@@ -322,6 +321,7 @@ class Ui_MainWindow(QMainWindow):
 
         userInput = self.editTf.toPlainText()
         userInput = re.split(r'\W+', userInput.lower())
+        userInput = list(dict.fromkeys(userInput))
         
         kolom_tf = ['df', 'D/df', 'IDF', 'IDF+1']
 
@@ -486,6 +486,7 @@ class Ui_MainWindow(QMainWindow):
                     file_rank[j] = file_rank[j+1]
                     file_rank[j+1] = temp
 
+        self.rankTf.clear()
         self.rankTf.addItem('-- File Rank --')
         for k in range(len(file_rank)):
             self.rankTf.addItem('{} : {}'.format(file_rank[k], total[k]))
@@ -581,7 +582,6 @@ class Ui_MainWindow(QMainWindow):
         self.listCos.addItem('keyword  :{}\n'.format(self.keyword))
 
         # Counting frequency of each keyword in each file
-        list_freq = []
         for x in range(len(self.listFile)):
 
             self.listCos.addItem('keyword : {}'.format(zeros_keyword))
