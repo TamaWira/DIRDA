@@ -50,8 +50,6 @@ class Ui_MainWindow(QMainWindow):
         for x in range(len(filenames)):
             if filenames[x] not in self.list_file:
                 self.list_file.append(filenames[x])
-        
-        print(self.list_file)
     
 # === Show Preprocessing -start-
     def showOriginal(self):
@@ -138,6 +136,9 @@ class Ui_MainWindow(QMainWindow):
                     newItem.setTextAlignment(QtCore.Qt.AlignCenter)
                     self.tableWidget.setItem(x, y, newItem)
     def printInverted(self):
+
+        self.listInverted.clear()
+
         for word in self.unique_words:
             inverted_index = []
             for files in self.list_file:
@@ -260,6 +261,7 @@ class Ui_MainWindow(QMainWindow):
         self.boolIncidence.setText(str(files))
         self.boolInverted.setText(str(files))
     def tf_idf(self):
+
         self.tableTf.setRowCount(0)
         self.rankTf.clear()
 
@@ -272,6 +274,7 @@ class Ui_MainWindow(QMainWindow):
 
         userInput = self.editTf.toPlainText()
         userInput = self.preprocessingQuery(userInput)
+        userInput = list(dict.fromkeys(userInput))
         
         kolom_tf = ['df', 'D/df', 'IDF', 'IDF+1']
 
@@ -504,19 +507,25 @@ class Ui_MainWindow(QMainWindow):
 
         keyword = self.editCosine.toPlainText()
         keyword = self.preprocessingQuery(keyword)
-        print(keyword)
+        keyword_copy = keyword.copy()
+        keyword_copy = list(dict.fromkeys(keyword_copy))
 
-        for x in range(len(keyword)):
+        print('keyword : ', keyword)
+        print('keyword_copy :', keyword_copy)
+
+        for x in range(len(keyword_copy)):
             freq = 0
             for y in range(len(keyword)):
-                if keyword[x] == keyword[y]:
+                if keyword_copy[x] == keyword[y]:
                     freq += 1
             zeros_keyword.append(freq)
+        
+        print('zeros :', zeros_keyword)
                 
         self.listCos.clear()
         self.rankCosine.clear()
 
-        self.listCos.addItem('keyword  :{}\n'.format(keyword))
+        self.listCos.addItem('keyword  :{}\n'.format(keyword_copy))
 
         # Counting frequency of each keyword in each file
         for x in range(len(self.list_file)):
@@ -526,15 +535,15 @@ class Ui_MainWindow(QMainWindow):
             list_freq = []
             
             dot_product = []
-            dot_product = [1] * len(keyword)
+            dot_product = [1] * len(keyword_copy)
 
             opened_file = self.preprocessed_files[self.list_file[x]]
 
-            for y in range(len(keyword)):
+            for y in range(len(keyword_copy)):
                 freq = 0
 
                 for z in range(len(opened_file)):
-                    if keyword[y] == opened_file[z]:
+                    if keyword_copy[y] == opened_file[z]:
                         freq += 1
                 
                 list_freq.append(freq)
