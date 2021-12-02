@@ -585,6 +585,9 @@ class Ui_MainWindow(QMainWindow):
             self.rankCosine.addItem('{} : {} => {}'.format(
                 os.path.splitext(os.path.basename(file_rank[k]))[0], round(total[k],2), file_content))
     def makeBM25(self):
+
+        self.listBM.clear()
+        self.rankBM.clear()
         total_doc_length = []
         file_rank = self.list_file.copy()
         N = len(self.list_file)
@@ -633,7 +636,7 @@ class Ui_MainWindow(QMainWindow):
                 bm_score = self.countBM(freq, len_document, N, avgdl, df)
                 bm_total += bm_score
                 self.listBM.addItem(f'{query[x]}\t: {bm_score}')
-            self.listBM.addItem(f'Total\t: <b>{bm_total}</b>\n')
+            self.listBM.addItem(f'Total\t: {bm_total}\n')
             doc_bm_score.append(bm_total)
         # ========================= -end- =================================
 
