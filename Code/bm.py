@@ -1,4 +1,4 @@
-from math import sqrt
+from math import sqrt, log
 from PyQt5 import QtCore
 from PyQt5.uic import loadUi
 from PyQt5.QtGui import QFont
@@ -38,6 +38,7 @@ class Ui_MainWindow(QMainWindow):
         self.btnJacCheck.clicked.connect(self.jaccard)
         self.btnNCheck.clicked.connect(self.makeNGram)
         self.btnCosine.clicked.connect(self.makeCosineSimilarity)
+        self.btnBM.clicked.connect(self.makeBM25)
 
     def openFile(self):
 
@@ -438,7 +439,9 @@ class Ui_MainWindow(QMainWindow):
         self.rankTf.clear()
         self.rankTf.addItem('-- File Rank --')
         for k in range(len(file_rank)):
-            self.rankTf.addItem('{} : {}'.format(os.path.basename(file_rank[k]), round(total[k],2)))
+            opened_file = open(file_rank[k], 'r')
+            file_content = opened_file.read()
+            self.rankTf.addItem('{} : {} => {}'.format(os.path.basename(file_rank[k]), round(total[k],2), file_content))
     def jaccard(self):
 
         total = []
@@ -472,7 +475,9 @@ class Ui_MainWindow(QMainWindow):
         
         self.rankJaccard.addItem('-- File Rank --')
         for k in range(len(file_rank)):
-            self.rankJaccard.addItem('{} : {}'.format(os.path.basename(file_rank[k]), round(total[k],2)))
+            opened_file = open(file_rank[k], 'r')
+            file_content = opened_file.read()
+            self.rankJaccard.addItem('{} : {} => {}'.format(os.path.basename(file_rank[k]), round(total[k],2), file_content))
     def makeNGram(self):
 
         total = []
@@ -510,9 +515,6 @@ class Ui_MainWindow(QMainWindow):
         keyword_copy = keyword.copy()
         keyword_copy = list(dict.fromkeys(keyword_copy))
 
-        print('keyword : ', keyword)
-        print('keyword_copy :', keyword_copy)
-
         for x in range(len(keyword_copy)):
             freq = 0
             for y in range(len(keyword)):
@@ -520,7 +522,6 @@ class Ui_MainWindow(QMainWindow):
                     freq += 1
             zeros_keyword.append(freq)
         
-        print('zeros :', zeros_keyword)
                 
         self.listCos.clear()
         self.rankCosine.clear()
@@ -533,8 +534,6 @@ class Ui_MainWindow(QMainWindow):
             self.listCos.addItem('keyword : {}'.format(zeros_keyword))
 
             list_freq = []
-            
-            dot_product = []
             dot_product = [1] * len(keyword_copy)
 
             opened_file = self.preprocessed_files[self.list_file[x]]
@@ -581,18 +580,82 @@ class Ui_MainWindow(QMainWindow):
         
         self.rankCosine.addItem('-- File Rank --')
         for k in range(len(file_rank)):
-            self.rankCosine.addItem('{} : {}'.format(
-                os.path.splitext(os.path.basename(file_rank[k]))[0], round(total[k],2)))
-# - end -
+            opened_file = open(file_rank[k], 'r')
+            file_content = opened_file.read()
+            self.rankCosine.addItem('{} : {} => {}'.format(
+                os.path.splitext(os.path.basename(file_rank[k]))[0], round(total[k],2), file_content))
+    def makeBM25(self):
+        total_doc_length = []
+        file_rank = self.list_file.copy()
+        N = len(self.list_file)
 
-    def doAll(self):
-        self.openFile()
-        self.showOriginal()
-        self.showTokenisasi()
-        self.showStopwords()
-        self.showStemming()
-        self.printIncidence()
-        self.printInverted()
+        query = self.editBM.toPlainText()
+        query = self.preprocessingQuery(query)
+
+        # --------------- Get Recquired Parameters ---------------
+
+        # ----- Get length of all document -start
+        for file in self.list_file:
+            total_doc_length.extend(self.preprocessed_files[file])
+        # ===== -end-
+
+        # ----- Get Length of all document -start-
+        all_doc_len = []
+        for file in self.list_file:
+            all_doc_len.extend(self.preprocessed_files[file])
+        len_all_doc = len(all_doc_len)
+        # ===== -end-
+
+        N = len(self.list_file)
+        doc_bm_score = []
+
+        # --------------- BM25 Scoring ---------------
+        for file in self.list_file:
+
+            bm_score = 0
+            bm_total = 0
+            len_document = len(self.preprocessed_files[file])
+            avgdl = len_all_doc/N
+
+            self.listBM.addItem(f'{os.path.basename(file)} :')
+
+            for x in range(len(query)):
+                df = 0
+                freq = 0
+                for y in range(len(self.preprocessed_files[file])):
+                    if query[x] == self.preprocessed_files[file][y]:
+                        freq += 1
+                for file2 in self.list_file:
+                    if query[x] in self.preprocessed_files[file2]:
+                        df += 1
+                
+                bm_score = self.countBM(freq, len_document, N, avgdl, df)
+                bm_total += bm_score
+                self.listBM.addItem(f'{query[x]}\t: {bm_score}')
+            self.listBM.addItem(f'Total\t: <b>{bm_total}</b>\n')
+            doc_bm_score.append(bm_total)
+        # ========================= -end- =================================
+
+        # --------------- Ranking ---------------
+        for i in range(len(self.list_file)-1):
+            for j in range(len(self.list_file)-i-1):
+                if doc_bm_score[j] < doc_bm_score[j+1]:
+                    temp_total = doc_bm_score[j]
+                    doc_bm_score[j] = doc_bm_score[j+1]
+                    doc_bm_score[j+1] = temp_total
+
+                    temp = file_rank[j]
+                    file_rank[j] = file_rank[j+1]
+                    file_rank[j+1] = temp
+        
+        self.rankCosine.addItem('-- File Rank --')
+        for k in range(len(file_rank)):
+            opened_file = open(file_rank[k], 'r')
+            file_content = opened_file.read()
+            self.rankBM.addItem('{} : {} => {}'.format(
+                os.path.splitext(os.path.basename(file_rank[k]))[0], round(doc_bm_score[k],2), file_content))
+        # ========= Ranking end =========
+# - end -
 
 # -------------------------------------------- HELPER FUNCTION --------------------------------------------
 
@@ -607,7 +670,6 @@ class Ui_MainWindow(QMainWindow):
             # Tokenizing =====================================||
             file_content = file_content.lower()              #|| --> Case Folding
             file_content = re.split(r'\W+', file_content)    #|| --> Tokenize
-            # file_content = list(dict.fromkeys(file_content)) #|| --> Remove duplicate words
             # ------------------------------------------------||
 
             tokenized_words_O[file] = file_content.copy()
@@ -663,6 +725,14 @@ class Ui_MainWindow(QMainWindow):
                     unique_words.append(self.preprocessed_files[files][idx])
         
         return unique_words
+    def doAll(self):
+        self.openFile()
+        self.showOriginal()
+        self.showTokenisasi()
+        self.showStopwords()
+        self.showStemming()
+        self.printIncidence()
+        self.printInverted()
 
 # --- Fungsi Preprocessing Query/Keyword
     def preprocessingQuery(self, string):
@@ -695,7 +765,6 @@ class Ui_MainWindow(QMainWindow):
             stemmed_words.append(stemmer.stem(tokenized_string[idx]))
             
         return stemmed_words
-
     def items_clear(self):
         for item in self.tableWidget.selectedItems():
             newitem = QTableWidgetItem()
@@ -708,10 +777,14 @@ class Ui_MainWindow(QMainWindow):
         self.concat.sort()
     def generate_N_grams(self, text,ngram=1):
         words=[word for word in text.split(" ")]  
-        print("Sentence after removing stopwords:",words)
         temp=zip(*[words[i:] for i in range(0,ngram)])
         ans=[' '.join(ngram) for ngram in temp]
         return ans
+    def countBM(self, freq, len_document, N, avgdl, df, k=1.25, b=0.75):
+        tf = ((k+1) * freq) / (k * (1 - b + b * (len_document/avgdl) + freq))
+        idf = log((N - df + 0.5) / (df + 0.5))
+        bm = tf*idf
+        return bm
     def finding_all_unique_words_and_freq(self, words):
         words_unique = []
         word_freq = {}
