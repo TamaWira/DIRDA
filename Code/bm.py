@@ -652,7 +652,7 @@ class Ui_MainWindow(QMainWindow):
                     file_rank[j] = file_rank[j+1]
                     file_rank[j+1] = temp
         
-        self.rankCosine.addItem('-- File Rank --')
+        self.rankBM.addItem('-- File Rank --')
         for k in range(len(file_rank)):
             opened_file = open(file_rank[k], 'r')
             file_content = opened_file.read()
@@ -785,7 +785,7 @@ class Ui_MainWindow(QMainWindow):
         ans=[' '.join(ngram) for ngram in temp]
         return ans
     def countBM(self, freq, len_document, N, avgdl, df, k=1.25, b=0.75):
-        tf = ((k+1) * freq) / (k * (1 - b + b * (len_document/avgdl) + freq))
+        tf = ((k+1) * freq) / (k * (1 - b + b * (len_document/avgdl)) + freq)
         idf = log((N - df + 0.5) / (df + 0.5))
         bm = tf*idf
         return bm
