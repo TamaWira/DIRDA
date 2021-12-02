@@ -591,6 +591,7 @@ class Ui_MainWindow(QMainWindow):
 
         query = self.editBM.toPlainText()
         query = self.preprocessingQuery(query)
+        query = list(dict.fromkeys(query))
 
         # --------------- Get Recquired Parameters ---------------
 
@@ -617,7 +618,7 @@ class Ui_MainWindow(QMainWindow):
             len_document = len(self.preprocessed_files[file])
             avgdl = len_all_doc/N
 
-            self.listBM.addItem(f'{os.path.basename(file)} :')
+            self.listBM.addItem(f'===== {os.path.basename(file)} :')
 
             for x in range(len(query)):
                 df = 0
