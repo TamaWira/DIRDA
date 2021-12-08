@@ -39,6 +39,7 @@ class Ui_MainWindow(QMainWindow):
         self.btnNCheck.clicked.connect(self.makeNGram)
         self.btnCosine.clicked.connect(self.makeCosineSimilarity)
         self.btnBM.clicked.connect(self.makeBM25)
+        self.btnBMPlus.clicked.connect(self.makeBM25Plus)
 
     def openFile(self):
 
@@ -584,6 +585,74 @@ class Ui_MainWindow(QMainWindow):
             file_content = opened_file.read()
             self.rankCosine.addItem('{} : {} => {}'.format(
                 os.path.splitext(os.path.basename(file_rank[k]))[0], round(total[k],2), file_content))
+    def BMTable(self):
+
+        self.tableBM.setRowCount(0)
+        
+        font = QFont()
+        font.setBold(True)
+
+        userInput = self.editBM.toPlainText()
+        userInput = self.preprocessingQuery(userInput)
+        userInput = list(dict.fromkeys(userInput))
+
+        # === Deklarasi Table -start-
+        kolom_per_doc = ['TF', 'IDF', 'BM25']
+        panjang_kolom = len(self.list_file)*4 + 2 #2 : kolom kosong kiri + kolom df
+        
+        self.tableBM.setColumnCount(panjang_kolom)
+        self.tableBM.setRowCount(len(userInput)+3)
+        self.tableBM.horizontalHeader().setVisible(False)
+        self.tableBM.verticalHeader().setVisible(False)
+        # === END
+
+        # ========== Span Freq ==========
+
+        ''' Format bikin span : tableTf.setSpan(row, column, rowSpan, columnSpan) '''
+
+        self.tableBM.setSpan(0, 1, 1, len(self.list_file))
+        newItem = QTableWidgetItem("freq")
+        newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableBM.setItem(0, 1, newItem)
+        self.tableBM.item(0, 1).setFont(font)
+
+        # ========== Span tf ==========
+
+        self.tableBM.setSpan(0, len(self.list_file)+1, 2, 1)
+        newItem = QTableWidgetItem("df")
+        newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        self.tableBM.setItem(0, len(self.list_file)+1, newItem)
+        self.tableBM.item(0, len(self.list_file)+1).setFont(font)
+
+        for idx in range(len(self.list_file)):
+            newItem = QTableWidgetItem(str(os.path.basename(self.list_file[idx])))
+            newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+            self.tableBM.setSpan(0, idx+len(self.list_file)+1, 1, len(self.list_file))
+            self.tableBM.setItem(0, len(self.list_file)+2, newItem)
+            self.tableBM.item(0, len(self.list_file)+2).setFont(font)
+        # ========== Span D1 ==========
+
+        # self.tableBM.setSpan(0, len(self.list_file)*2+2, 1, len(self.list_file))
+        # newItem = QTableWidgetItem("")
+        # newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        # self.tableBM.setItem(0, len(self.list_file)*2+1, newItem)
+        # self.tableBM.item(0, len(self.list_file)*2+1).setFont(font)
+
+        # # ========== Span IDF ==========
+
+        # self.tableBM.setSpan(0, len(self.list_file)*2+2, 1, len(self.list_file))
+        # newItem = QTableWidgetItem("IDF")
+        # newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        # self.tableBM.setItem(0, len(self.list_file)*2+2, newItem)
+        # self.tableBM.item(0, len(self.list_file)*2+2).setFont(font)
+
+        # # # ========== Span BM25 ==========
+
+        # self.tableBM.setSpan(0, len(self.list_file)*3+2, 1, len(self.list_file))
+        # newItem = QTableWidgetItem("BM25")
+        # newItem.setTextAlignment(QtCore.Qt.AlignCenter)
+        # self.tableBM.setItem(0, len(self.list_file)*3+2, newItem)
+        # self.tableBM.item(0, len(self.list_file)*3+2).setFont(font)
     def makeBM25(self):
 
         self.listBM.clear()
@@ -635,8 +704,8 @@ class Ui_MainWindow(QMainWindow):
                 
                 bm_score = self.countBM(freq, len_document, N, avgdl, df)
                 bm_total += bm_score
-                self.listBM.addItem(f'{query[x]}\t: {bm_score}')
-            self.listBM.addItem(f'Total\t: {bm_total}\n')
+                self.listBM.addItem(f'{query[x]}\t: {round(bm_score,2)}')
+            self.listBM.addItem(f'--- Total\t: {round(bm_total,2)}\n')
             doc_bm_score.append(bm_total)
         # ========================= -end- =================================
 
@@ -657,6 +726,83 @@ class Ui_MainWindow(QMainWindow):
             opened_file = open(file_rank[k], 'r')
             file_content = opened_file.read()
             self.rankBM.addItem('{} : {} => {}'.format(
+                os.path.splitext(os.path.basename(file_rank[k]))[0], round(doc_bm_score[k],2), file_content))
+        # ========= Ranking end =========
+    def makeBM25Plus(self):
+
+        self.listBMPlus.clear()
+        self.rankBMPlus.clear()
+        total_doc_length = []
+        file_rank = self.list_file.copy()
+        N = len(self.list_file)
+
+        query = self.editBMPlus.toPlainText()
+        query = self.preprocessingQuery(query)
+        query = list(dict.fromkeys(query))
+
+        # --------------- Get Recquired Parameters ---------------
+
+        # ----- Get length of all document -start
+        for file in self.list_file:
+            total_doc_length.extend(self.preprocessed_files[file])
+        # ===== -end-
+
+        # ----- Get Length of all document -start-
+        all_doc_len = []
+        for file in self.list_file:
+            all_doc_len.extend(self.preprocessed_files[file])
+        len_all_doc = len(all_doc_len)
+        # print(len_all_doc)
+        # ===== -end-
+
+        N = len(self.list_file)
+        doc_bm_score = []
+
+        # --------------- BM25 Scoring ---------------
+        for file in self.list_file:
+
+            bm_score = 0
+            bm_total = 0
+            len_document = len(self.preprocessed_files[file])
+            avgdl = len_all_doc/N
+            print(f'{os.path.basename(file)} : {len_document}, {avgdl}')
+
+            self.listBMPlus.addItem(f'===== {os.path.basename(file)} :')
+
+            for x in range(len(query)):
+                df = 0
+                freq = 0
+                for y in range(len(self.preprocessed_files[file])):
+                    if query[x] == self.preprocessed_files[file][y]:
+                        freq += 1
+                for file2 in self.list_file:
+                    if query[x] in self.preprocessed_files[file2]:
+                        df += 1
+                
+                bm_score = self.countBMPlus(freq, len_document, N, avgdl, df)
+                bm_total += bm_score
+                self.listBMPlus.addItem(f'{query[x]}\t: {round(bm_score,2)}')
+            self.listBMPlus.addItem(f'--- Total\t: {round(bm_total,2)}\n')
+            doc_bm_score.append(bm_total)
+        # ========================= -end- =================================
+
+        # --------------- Ranking ---------------
+        for i in range(len(self.list_file)-1):
+            for j in range(len(self.list_file)-i-1):
+                if doc_bm_score[j] < doc_bm_score[j+1]:
+                    temp_total = doc_bm_score[j]
+                    doc_bm_score[j] = doc_bm_score[j+1]
+                    doc_bm_score[j+1] = temp_total
+
+                    temp = file_rank[j]
+                    file_rank[j] = file_rank[j+1]
+                    file_rank[j+1] = temp
+        
+        self.rankBMPlus.addItem('-- File Rank --')
+        for k in range(len(file_rank)):
+            opened_file = open(file_rank[k], 'r')
+            file_content = opened_file.read()
+            self.rankBMPlus.addItem('{} : {} => {}'.format(
                 os.path.splitext(os.path.basename(file_rank[k]))[0], round(doc_bm_score[k],2), file_content))
         # ========= Ranking end =========
 # - end -
@@ -787,6 +933,11 @@ class Ui_MainWindow(QMainWindow):
     def countBM(self, freq, len_document, N, avgdl, df, k=1.25, b=0.75):
         tf = ((k+1) * freq) / (k * (1 - b + b * (len_document/avgdl)) + freq)
         idf = log((N - df + 0.5) / (df + 0.5))
+        bm = tf*idf
+        return bm
+    def countBMPlus(self, freq, len_document, N, avgdl, df, k=1.25, b=0.75, delta=0.9):
+        tf = ((k+1)*freq) / (k*((1-b) + b*(len_document/avgdl)) + freq) + delta
+        idf = log((N + 1) / df)
         bm = tf*idf
         return bm
     def finding_all_unique_words_and_freq(self, words):
