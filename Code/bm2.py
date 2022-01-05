@@ -1,5 +1,6 @@
 from math import sqrt, log10
 from PyQt5 import QtCore
+from PyQt5 import QtGui
 from PyQt5.uic import loadUi
 from PyQt5.QtGui import QFont
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
@@ -41,6 +42,9 @@ class Ui_MainWindow(QMainWindow):
         self.btnCosine.clicked.connect(self.makeCosineSimilarity)
         self.btnBM.clicked.connect(self.makeBM25)
         self.btnBMPlus.clicked.connect(self.makeBM25Plus)
+
+        gambarRumus = QtGui.QPixmap('rumus.jpg')
+        self.labelRumus.setPixmap(gambarRumus)
 
     def openFile(self):
 
@@ -782,7 +786,7 @@ class Ui_MainWindow(QMainWindow):
 
                 bm_score = self.countBMPlus(freq, len_document, N, avgdl, df)
                 bm_total += bm_score
-                self.listBMPlus.addItem(f'{query[x]}\t: [tf : {freq}] ; [df : {df}] ; [rsvq : {round(bm_score,2)}]')
+                self.listBMPlus.addItem(f'{query[x]}\t: [tf : {freq}] ; [Ld : {len_document}] ; [Ld/Lavg : {round(len_document/avgdl,2)}] ; [df : {df}] ; [rsvq : {round(bm_score,2)}]')
             self.listBMPlus.addItem(f'--- Total\t: {round(bm_total,2)}\n')
             doc_bm_score.append(bm_total)
         # ========================= -end- =================================
