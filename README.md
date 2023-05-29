@@ -1,4 +1,4 @@
-# Document Information Retrieval Desktop App
+# DIRDA - Document Information Retrieval Desktop App
 **By __I Putu Bayu Adhya Wiratama__, __Ida Ayu Oka Dewi Cahyani__, and __Dwi Ahmad Dzulhijjah__*
 
 ---
